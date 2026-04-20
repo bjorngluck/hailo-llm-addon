@@ -1,0 +1,31 @@
+name: "Hailo LLM"
+version: "1.0.0"
+slug: "hailo_llm"
+description: "Hailo-10H + Model Zoo + Ollama LLM server with auto model download"
+url: "https://github.com/bjorngluck/hailo-llm-addon"
+arch:
+  - aarch64
+init: false
+privileged: true
+devices:
+  - /dev/hailo0
+map:
+  - share:rw
+  - ssl:ro
+options:
+  ollama_keep_alive: "300m"
+  auto_download_model: true
+schema:
+  ollama_keep_alive: str
+  auto_download_model: bool
+ports:
+  8000/tcp: 8000
+ports_description:
+  8000/tcp: "Hailo-Ollama API"
+webui: "http://[HOST]:[PORT:8000]"
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s

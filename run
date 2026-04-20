@@ -1,0 +1,20 @@
+#!/usr/bin/with-contenv bashio
+
+bashio::log.info "Starting Hailo LLM v1.1.0..."
+
+KEEP_ALIVE=$(bashio::config 'ollama_keep_alive')
+AUTO_DOWNLOAD=$(bashio::config 'auto_download_model')
+
+export OLLAMA_KEEP_ALIVE="$KEEP_ALIVE"
+
+# Auto-download a default model on first start if enabled
+if [ "$AUTO_DOWNLOAD" = "true" ]; then
+    if [ ! -f /usr/share/hailo-ollama/models/llama3.2:3b ]; then
+        bashio::log.info "Downloading default model (llama3.2:3b)..."
+        # Placeholder - replace with actual hailo model download command
+        # hailo-ollama pull llama3.2:3b || true
+    fi
+fi
+
+bashio::log.info "Starting hailo-ollama..."
+exec hailo-ollama
