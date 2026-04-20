@@ -1,0 +1,31 @@
+name: "Hailo LLM"
+description: "Hailo-10H Model Zoo + Ollama LLM server"
+version: "1.0.0"
+slug: "hailo_llm"
+url: "https://github.com/bjorngluck/hailo-llm-addon"
+arch:
+  - aarch64
+init: false
+startup: application
+boot: manual
+ingress: true
+ingress_port: 8000
+ingress_entry: /
+panel_icon: "mdi:robot"
+panel_title: "Hailo LLM"
+devices:
+  - "/dev/hailo0"
+full_access: true
+privileged:
+  - SYS_RAWIO
+apparmor: false
+timeout: 300
+map:
+  - type: media
+    read_only: false
+options:
+  keep_alive: "300m"
+  auto_download_model: true
+schema:
+  keep_alive: str
+  auto_download_model: bool
