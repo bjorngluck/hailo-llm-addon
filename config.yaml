@@ -7,17 +7,11 @@ arch:
   - aarch64
 init: false
 privileged: true
-devices:
-  - /dev/hailo0
 map:
   - share:rw
-  - ssl:ro
 options:
-  ollama_keep_alive: "300m"
-  auto_download_model: true
+  keep_alive: "5m"
 schema:
-  ollama_keep_alive: str
-  auto_download_model: bool
+  keep_alive: str
 ports:
   8000/tcp: 8000
-webui: "http://[HOST]:[PORT:8000]"

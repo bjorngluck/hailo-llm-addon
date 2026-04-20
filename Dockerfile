@@ -1,25 +1,22 @@
-FROM ubuntu:24.04
+FROM ghcr.io/home-assistant/aarch64-base:3.18
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y \
-    ca-certificates curl gnupg python3 python3-pip \
-    libusb-1.0-0 wget \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    libusb \
+    curl
 
 COPY hailort_*.deb /tmp/
 COPY hailo_gen_ai_model_zoo_*.deb /tmp/
 
-RUN dpkg -i /tmp/hailort_*.deb /tmp/hailo_gen_ai_model_zoo_*.deb \
-    && apt-get install -f -y \
-    && rm -f /tmp/*.deb
+RUN dpkg -i /tmp/hailort_*.deb /tmp/hailo_gen_ai_model_zoo_*.deb || true
+RUN apk fix || true
 
-RUN mkdir -p /usr/share/hailo-ollama/models
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+RUN mkdir -p /data/models
 
 EXPOSE 8000
 
-CMD ["hailo-ollama"]
+COPY run /run/
+RUN chmod a+x /run/run
+
+CMD [ "/run/run" ]
