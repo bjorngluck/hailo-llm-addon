@@ -1,8 +1,8 @@
 # Hailo LLM Documentation
 
 ## Options
-- keep_alive: How long to keep models loaded
-- auto_download_model: Auto download default model on first start
+- keep_alive
+- auto_download_model
 
-## Usage
-API available on port 8000 (Ollama compatible)
+## API
+Port 8000 (Ollama compatible)

@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY packages/ /tmp/packages/
 
-# Install HailoRT + GenAI Model Zoo (5.3.0)
 RUN apt-get update \
     && dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true; \
     apt-get install -f -y \
