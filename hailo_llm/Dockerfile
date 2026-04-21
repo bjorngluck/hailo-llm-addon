@@ -14,15 +14,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY packages/ /tmp/packages/
 
-RUN apt-get update \
-    && dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true; \
-    apt-get install -f -y \
-    && ldconfig \
-    && rm -rf /var/lib/apt/lists/*
+# Install HailoRT + GenAI Model Zoo (this should provide hailo-ollama)
+RUN ls -la /tmp/packages/ && \
+    dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true; \
+    apt-get install -f -y || true; \
+    ldconfig
 
+# Install Python wheel
 RUN pip3 install --break-system-packages --no-cache-dir \
-    /tmp/packages/hailort-5.3.0-cp311-cp311-linux_aarch64.whl \
-    && rm -rf /tmp/packages
+    /tmp/packages/hailort-5.3.0-cp311-cp311-linux_aarch64.whl || true
 
 COPY rootfs /
 
