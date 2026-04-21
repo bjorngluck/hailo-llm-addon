@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY packages/ /tmp/packages/
 
-RUN dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb || true && \
+RUN dpkg -i /tmp/packages/hailort_5.3.0_arm64.deb || true && \
     dpkg -i /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true && \
     apt-get update && apt-get install -f -y && \
     ldconfig && \
