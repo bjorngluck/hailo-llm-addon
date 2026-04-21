@@ -1,6 +1,6 @@
 name: "Hailo LLM"
 description: "Hailo-10H Model Zoo + Ollama LLM server"
-version: "1.0.7"
+version: "1.0.8"
 slug: "hailo_llm"
 url: "https://github.com/bjorngluck/hailo-llm-addon"
 arch:

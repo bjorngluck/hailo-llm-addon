@@ -3,7 +3,6 @@ FROM ${BUILD_FROM}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -20,11 +19,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY packages/ /tmp/packages/
 
-# Install Hailo runtime + GenAI Model Zoo (provides hailo-ollama)
-RUN dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb || true && \
+# === DEBUG: Install packages and show exactly what they contain ===
+RUN echo "=== Installing Hailo packages ===" && \
+    dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb || true && \
     dpkg -i /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true && \
     apt-get update && apt-get install -f -y && \
     ldconfig && \
+    echo "=== Files installed by hailo-gen-ai-model-zoo ===" && \
+    dpkg -L hailo-gen-ai-model-zoo 2>/dev/null | head -30 || echo "Package not installed" && \
+    echo "=== Searching for hailo-ollama binary ===" && \
+    find /usr /opt /usr/local -name "*ollama*" -type f 2>/dev/null || echo "No ollama binary found" && \
+    ls -la /usr/bin/hailo* /usr/local/bin/hailo* 2>/dev/null || echo "No hailo binaries in common paths" && \
+    which hailo-ollama || echo "hailo-ollama NOT found in PATH" && \
     rm -rf /tmp/packages/*.deb /var/lib/apt/lists/*
 
 # Python bindings
