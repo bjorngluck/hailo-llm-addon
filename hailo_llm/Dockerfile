@@ -1,8 +1,9 @@
-FROM ubuntu:24.04
+FROM ghcr.io/home-assistant/base:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
+# System dependencies that the Hailo debs commonly need
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     gnupg \
@@ -18,14 +19,16 @@ RUN apt-get update && apt-get install -y \
 
 COPY packages/ /tmp/packages/
 
-RUN dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true; \
-    apt-get install -f -y; \
-    ldconfig; \
-    rm -f /tmp/packages/*.deb
+# Install Hailo packages properly (no silent failure)
+RUN dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb || true && \
+    dpkg -i /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true && \
+    apt-get update && apt-get install -f -y && \
+    ldconfig && \
+    rm -rf /tmp/packages/*.deb /var/lib/apt/lists/*
 
+# Python bindings (pyhailort)
 RUN pip3 install --break-system-packages --no-cache-dir \
-    /tmp/packages/hailort-5.3.0-cp311-cp311-linux_aarch64.whl || true; \
-    rm -rf /tmp/packages
+    /tmp/packages/hailort-5.3.0-cp311-cp311-linux_aarch64.whl || true
 
 COPY rootfs /
 
