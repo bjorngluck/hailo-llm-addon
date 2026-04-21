@@ -1,8 +1,9 @@
-FROM ghcr.io/home-assistant/base:latest
+ARG BUILD_FROM=ghcr.io/home-assistant/aarch64-base-debian:bookworm
+FROM ${BUILD_FROM}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# System dependencies that the Hailo debs commonly need
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -19,14 +20,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY packages/ /tmp/packages/
 
-# Install Hailo packages properly (no silent failure)
+# Install Hailo runtime + GenAI Model Zoo (provides hailo-ollama)
 RUN dpkg -i /tmp/packages/h10-hailort_5.3.0_arm64.deb || true && \
     dpkg -i /tmp/packages/hailo_gen_ai_model_zoo_5.3.0_arm64.deb || true && \
     apt-get update && apt-get install -f -y && \
     ldconfig && \
     rm -rf /tmp/packages/*.deb /var/lib/apt/lists/*
 
-# Python bindings (pyhailort)
+# Python bindings
 RUN pip3 install --break-system-packages --no-cache-dir \
     /tmp/packages/hailort-5.3.0-cp311-cp311-linux_aarch64.whl || true
 
