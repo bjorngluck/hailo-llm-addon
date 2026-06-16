@@ -3,14 +3,31 @@ set -e
 
 CONFIG_PATH=/data/options.json
 
+# Read options (keep the original option names for backward compat)
 KEEP_ALIVE=$(jq -r '.keep_alive // "300m"' "$CONFIG_PATH" 2>/dev/null || echo "300m")
+AUTO_DOWNLOAD=$(jq -r '.auto_download_model // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+
 export OLLAMA_KEEP_ALIVE="$KEEP_ALIVE"
+export OLLAMA_MODELS="/data/models"
+export AUTO_DOWNLOAD_MODEL="$AUTO_DOWNLOAD"
 
 echo "=========================================="
-echo " Hailo LLM Add-on v1.0.0"
+echo " Hailo LLM Add-on"
 echo "=========================================="
-echo "Keep Alive: $KEEP_ALIVE"
+echo "Keep Alive:        $KEEP_ALIVE"
+echo "Models dir (persisted): /data/models"
+echo "Auto-download:     $AUTO_DOWNLOAD"
 echo "=========================================="
+
+# Ensure persistent storage for models + chat history (HAOS /data is durable across reboots)
+mkdir -p /data/models /data/chats
+
+# Defensive symlinks so the hailo-ollama binary finds models no matter which path it probes
+# (community reports show it has used ~/.ollama, /usr/share/hailo-ollama etc.)
+mkdir -p /root/.ollama
+ln -sfn /data/models /root/.ollama/models 2>/dev/null || true
+ln -sfn /data/models /usr/share/hailo-ollama/models 2>/dev/null || true
+ln -sfn /data/models /usr/share/hailo-models 2>/dev/null || true
 
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
@@ -36,5 +53,36 @@ if ! command -v hailo-ollama >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "Starting hailo-ollama server on port 8000..."
-exec hailo-ollama serve --host 0.0.0.0 --port 8000
+# === Launch the inference binary on an INTERNAL port only ===
+# We run the real hailo-ollama on 11434 (localhost) and put a Python layer
+# (Flask UI + thin proxy) on the ingress port 8000. This gives us:
+#   - Persistent model storage (via OLLAMA_MODELS + symlinks)
+#   - A beautiful interactive chat UI at the ingress
+#   - Unchanged Ollama-compatible API surface for external clients
+echo "Starting hailo-ollama inference server (internal) on 127.0.0.1:11434 ..."
+hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
+HAILO_PID=$!
+
+# Make sure we clean up the background process on exit
+trap 'echo "Stopping hailo-ollama (pid $HAILO_PID)"; kill $HAILO_PID 2>/dev/null || true; wait $HAILO_PID 2>/dev/null || true' EXIT INT TERM
+
+# Wait for the inference server to become ready (it may need a moment for the NPU)
+echo "Waiting for hailo-ollama to become ready..."
+READY=0
+for i in $(seq 1 45); do
+    if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1 || \
+       curl -sf http://127.0.0.1:11434/hailo/v1/list >/dev/null 2>&1; then
+        echo "✓ hailo-ollama ready (pid $HAILO_PID)"
+        READY=1
+        break
+    fi
+    sleep 1
+done
+
+if [ "$READY" -ne 1 ]; then
+    echo "⚠ hailo-ollama did not become ready in time. Check /tmp/hailo-ollama.log"
+    # We still continue — the UI can surface the error
+fi
+
+echo "Starting web UI + API proxy on port 8000 (for ingress + Ollama clients)..."
+exec python3 /opt/hailo_llm/server.py
