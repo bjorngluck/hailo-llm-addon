@@ -23,31 +23,31 @@ This document describes the internal architecture of the Hailo LLM Home Assistan
 
 ```mermaid
 graph TD
-    subgraph "Home Assistant Host"
+    subgraph Host["Home Assistant Host"]
         HA[Home Assistant Core]
         Supervisor[HA Supervisor]
     end
 
-    subgraph "Hailo LLM Addon Container"
-        subgraph "Ingress (port 8000)"
+    subgraph Addon["Hailo LLM Addon Container"]
+        subgraph Ingress["Ingress (port 8000)"]
             UI[Modern Chat UI<br/>Tailwind + Vanilla JS]
             Proxy[Flask Proxy Layer]
         end
 
         Run[run.sh orchestrator]
 
-        subgraph "Internal"
-            Binary[hailo-ollama serve<br/>:11434]
-            Flask[Flask App]
+        subgraph Internal["Internal"]
+            Binary["hailo-ollama serve<br/>:11434"]
+            FlaskApp[Flask App]
         end
 
-        subgraph "Persistent Data (/data)"
+        subgraph Storage["Persistent Data (/data)"]
             Models[(Models<br/>/data/models)]
             Chats[(Chat History<br/>/data/chats)]
             Options[(options.json)]
         end
 
-        Device[/dev/hailo0]
+        Device["/dev/hailo0"]
     end
 
     HA -->|Ingress panel| UI
@@ -55,10 +55,10 @@ graph TD
     Proxy -->|forward + stream| Binary
     Binary -->|HailoRT| Device
     Run --> Binary
-    Run --> Flask
-    Flask --> UI
+    Run --> FlaskApp
+    FlaskApp --> UI
     Binary --> Models
-    Flask --> Chats
+    FlaskApp --> Chats
     Supervisor --> Options
     Supervisor --> Models
     Supervisor --> Chats
@@ -69,19 +69,19 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant Supervisor
-    participant run.sh
-    participant hailo-ollama
+    participant Run as "run.sh"
+    participant Hailo as "hailo-ollama"
     participant Flask
-    participant /data
+    participant Data as "/data"
 
-    Supervisor->>run.sh: Start container (CMD)
-    run.sh->>/data: mkdir -p /data/models /data/chats
-    run.sh->>run.sh: Export OLLAMA_MODELS + symlinks
-    run.sh->>hailo-ollama: Start in background (127.0.0.1:11434)
-    run.sh->>hailo-ollama: Wait for readiness (poll /api/tags)
-    run.sh->>Flask: exec python server.py (port 8000)
+    Supervisor->>Run: Start container (CMD)
+    Run->>Data: mkdir -p /data/models /data/chats
+    Run->>Run: Export OLLAMA_MODELS + symlinks
+    Run->>Hailo: Start in background (127.0.0.1:11434)
+    Run->>Hailo: Wait for readiness (poll /api/tags)
+    Run->>Flask: exec python server.py (port 8000)
     Flask->>Flask: (optional) background auto-download if enabled
-    Note over Flask,hailo-ollama: Ready to serve UI + proxy API
+    Note over Flask,Hailo: Ready to serve UI + proxy API
 ```
 
 ## Request Flows
@@ -110,15 +110,15 @@ sequenceDiagram
 sequenceDiagram
     participant Browser
     participant Flask
-    participant hailo-ollama
-    participant /data/models
+    participant Hailo as "hailo-ollama"
+    participant Models as "/data/models"
 
     Browser->>Flask: POST /api/pull {"model": "qwen2.5:1.5b", stream:true}
-    Flask->>hailo-ollama: Forward
-    hailo-ollama->>hailo-ollama: Download + convert to HEF (if needed)
-    hailo-ollama-->>Flask: Status NDJSON (progress %)
+    Flask->>Hailo: Forward
+    Hailo->>Hailo: Download + convert to HEF (if needed)
+    Hailo-->>Flask: Status NDJSON (progress %)
     Flask-->>Browser: Status NDJSON
-    hailo-ollama->>/data/models: Write model files
+    Hailo->>Models: Write model files
     Browser->>Flask: Refresh /api/tags
 ```
 
