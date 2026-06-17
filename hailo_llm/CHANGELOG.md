@@ -1,3 +1,9 @@
+## 2.0.6
+- Fixed API calls in the web UI: changed from root-absolute paths (`/api/tags`, `/api/chats`, `/health`) to path-relative (`api/tags`, etc.). This ensures requests go through Home Assistant's ingress proxy (under `/api/hassio_ingress/...`) to the addon's internal port 8000 instead of hitting HA core's `/api` on port 443 (which caused 404s).
+- Removed all external CDN dependencies (Tailwind CSS from `https://cdn.tailwindcss.com` and Font Awesome) that were causing network/connection failures in the HA environment (no internet, CSP, or ingress restrictions).
+- Replaced with fully self-contained CSS in the HTML `<style>` block providing all necessary dark theme, layout, components, and icon fallbacks (Unicode/emoji). UI is now fully offline-compatible and works reliably via ingress.
+- Bumped version to 2.0.6.
+
 ## 2.0.5
 - UI fixes: Integrated settings section directly into the Models panel for cleaner layout (no more separate broken modal or overlapping content).
 - Removed the gear icon and old settings modal (settings now live inside Models).
