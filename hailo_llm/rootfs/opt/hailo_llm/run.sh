@@ -19,22 +19,53 @@ echo "Models dir (persisted): /data/models"
 echo "Auto-download:     $AUTO_DOWNLOAD"
 echo "=========================================="
 
+# Early export so any child processes see it
+export OLLAMA_MODELS=/data/models
+
 # Ensure persistent storage for models + chat history (HAOS /data is durable across reboots)
-mkdir -p /data/models /data/chats
+mkdir -p /data/models /data/chats /data/hailo-ollama
 chmod 755 /data/models 2>/dev/null || true
 
-# Make sure no stale non-persistent models dirs interfere (only user model storage locations)
+# Make sure no stale non-persistent models dirs interfere
 rm -rf /root/.ollama/models 2>/dev/null || true
 
-# Ensure the hailo-ollama manifest directories exist (binary requires "hailo-ollama directory" for manifests from the package)
-# Do NOT rm or symlink over /usr/share/hailo-ollama/models because the package installs manifests there (in models/manifests/)
-mkdir -p /usr/share/hailo-ollama /usr/share/hailo-ollama/manifests /usr/share/hailo-models /root/.ollama /root/hailo-ollama /root/.hailo-ollama /opt/hailo-ollama
+# Always ensure the target persistent structure has the manifests tree the binary expects.
+# Package lays out: /usr/share/hailo-ollama/models/manifests/<name>/<tag>/manifest.json
+mkdir -p /data/hailo-ollama/models/manifests
 
-# Defensive symlinks for user model storage (do not touch package manifest dir)
+# On first run (or if manifests missing), copy the package-provided manifests into persistent storage.
+if [ ! -d /data/hailo-ollama/models/manifests ] || [ -z "$(ls /data/hailo-ollama/models/manifests 2>/dev/null)" ]; then
+  if [ -d /usr/share/hailo-ollama/models/manifests ]; then
+    echo "[persistence] Seeding /data/hailo-ollama/models/manifests from package..."
+    mkdir -p /data/hailo-ollama/models
+    cp -a /usr/share/hailo-ollama/models/manifests /data/hailo-ollama/models/ 2>/dev/null || true
+  fi
+fi
+
+# Replace any in-image /usr/share/hailo-ollama with a symlink to the persistent copy so the binary
+# finds (and writes) manifests persistently.
+rm -rf /usr/share/hailo-ollama 2>/dev/null || true
+ln -sfn /data/hailo-ollama /usr/share/hailo-ollama
+
+# Also prepare other locations the binary or ollama compat layer might reference.
+mkdir -p /usr/share/hailo-models /root/.ollama /root/hailo-ollama /root/.hailo-ollama /opt/hailo-ollama
+
+# Defensive symlink for classic ollama layout
+mkdir -p /root/.ollama
 ln -sfn /data/models /root/.ollama/models
 
-# Also ensure OLLAMA_MODELS is set for the child processes
+# Ensure OLLAMA_MODELS is set for the child processes (weights + any ollama-style manifests)
 export OLLAMA_MODELS=/data/models
+mkdir -p /data/models/manifests /data/models/blobs 2>/dev/null || true
+
+echo "=== Persistence layout ==="
+echo "OLLAMA_MODELS=$OLLAMA_MODELS"
+echo "/data/models contents:"
+ls -la /data/models 2>/dev/null | head -20 || echo "  (empty or not readable)"
+echo "/data/hailo-ollama (manifests home) contents:"
+ls -la /data/hailo-ollama 2>/dev/null | head -10 || echo "  (empty)"
+echo "/data/hailo-ollama/models/manifests sample:"
+ls -la /data/hailo-ollama/models/manifests 2>/dev/null | head -10 || echo "  (no manifests yet)"
 
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
@@ -60,23 +91,10 @@ if ! command -v hailo-ollama >/dev/null 2>&1; then
     exit 1
 fi
 
-# Setup persistent hailo-ollama directory (copy package manifests on first run, symlink for persistence)
-# This ensures manifests from the deb are in /data (persistent) and the binary finds them.
-if [ ! -d /data/hailo-ollama ]; then
-  if [ -d /usr/share/hailo-ollama ]; then
-    cp -a /usr/share/hailo-ollama /data/hailo-ollama
-  else
-    mkdir -p /data/hailo-ollama/models/manifests
-  fi
-fi
-rm -rf /usr/share/hailo-ollama
-ln -sfn /data/hailo-ollama /usr/share/hailo-ollama
-
-# Ensure OLLAMA_MODELS points to persistent /data/models for downloaded model files
-mkdir -p /data/models
+# (Persistence already prepared earlier — re-export here right before launch for safety)
 export OLLAMA_MODELS=/data/models
-mkdir -p /root/.ollama
-ln -sfn /data/models /root/.ollama/models
+mkdir -p /data/models /root/.ollama
+ln -sfn /data/models /root/.ollama/models 2>/dev/null || true
 
 # === Launch the inference binary on an INTERNAL port only ===
 # We run the real hailo-ollama on 11434 (localhost) and put a Python layer

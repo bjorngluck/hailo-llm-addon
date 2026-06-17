@@ -378,7 +378,8 @@ INDEX_HTML = r"""<!doctype html>
       padding: 0.375rem 2rem 0.375rem 0.75rem;
       border-radius: 1rem;
     }
-    .fa-solid { font-style: normal; }
+    .fa-solid { font-style: normal; display: inline-block; color: inherit; font-size: 1rem; line-height: 1; vertical-align: middle; }
+    i { color: inherit; }
     .fa-microchip:before { content: "⚙"; }
     .fa-plus:before { content: "+"; }
     .fa-download:before { content: "⬇"; }
@@ -393,12 +394,9 @@ INDEX_HTML = r"""<!doctype html>
     .fa-robot:before { content: "🤖"; }
     .fa-trash:before { content: "🗑"; }
     .fa-check:before { content: "✓"; }
-    .fa-times:before { content: "✕"; }
-    .fa-redo:before { content: "↻"; }
-    .fa-copy:before { content: "⎘"; }
-    .fa-chevron-down:before { content: "▼"; }
-    .fa-solid { font-style: normal; display: inline-block; color: white; }
-    i { color: inherit; }
+    i.fa-paper-plane { font-size: 1.25rem; }
+    /* Ensure light readable icons on dark surfaces */
+    button .fa-solid, .sidebar button .fa-solid { color: inherit; }
     #sidebar.collapsed {
       width: 3rem !important;
       overflow: hidden;
@@ -438,6 +436,13 @@ INDEX_HTML = r"""<!doctype html>
       background-color: #27272a;
       border-color: #3f3f46;
     }
+    /* Primary action buttons: force readable text/icon on indigo */
+    .bg-indigo-600, button.bg-indigo-600, button[class*="indigo-600"] {
+      color: #ffffff !important;
+    }
+    button .fa-solid {
+      color: inherit !important;
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
@@ -446,7 +451,7 @@ INDEX_HTML = r"""<!doctype html>
     <div id="sidebar" class="w-72 border-r border-zinc-800 bg-zinc-900 flex flex-col">
       <!-- Header -->
       <div class="p-4 border-b border-zinc-800 flex items-center gap-3">
-        <button onclick="toggleSidebar()" class="text-zinc-400 hover:text-white p-1" title="Toggle sidebar">☰</button>
+        <button onclick="toggleSidebar()" class="text-zinc-200 hover:text-white p-1 text-lg leading-none" title="Toggle sidebar" aria-label="Toggle sidebar">☰</button>
         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
           <i class="fa-solid fa-microchip text-lg"></i>
         </div>
@@ -459,7 +464,7 @@ INDEX_HTML = r"""<!doctype html>
       <!-- New Chat -->
       <div class="p-3">
         <button onclick="createNewChat()"
-                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 transition px-4 py-2.5 text-sm font-medium">
+                class="w-full flex items-center justify-center gap-2 rounded-2xl bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 transition px-4 py-2.5 text-sm font-medium text-zinc-200">
           <i class="fa-solid fa-plus"></i>
           <span>New chat</span>
         </button>
@@ -497,7 +502,7 @@ INDEX_HTML = r"""<!doctype html>
               <i class="fa-solid fa-chevron-down absolute right-3 top-2.5 text-xs text-zinc-400 pointer-events-none"></i>
             </div>
             <button onclick="openModelManager()"
-                    class="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-zinc-700 hover:bg-zinc-800 active:bg-zinc-900">
+                    class="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-zinc-700 hover:bg-zinc-800 active:bg-zinc-900 text-zinc-200">
               <i class="fa-solid fa-download text-indigo-400"></i>
               <span>Models</span>
             </button>
@@ -537,11 +542,11 @@ INDEX_HTML = r"""<!doctype html>
                         onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
             </div>
             <button onclick="sendMessage()"
-                    class="h-12 w-12 flex-shrink-0 rounded-3xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition flex items-center justify-center">
+                    class="h-12 w-12 flex-shrink-0 rounded-3xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition flex items-center justify-center text-white">
               <i class="fa-solid fa-paper-plane"></i>
             </button>
             <button onclick="stopGeneration()" id="stop-btn"
-                    class="hidden h-12 w-12 flex-shrink-0 rounded-3xl bg-rose-600 hover:bg-rose-500 items-center justify-center">
+                    class="hidden h-12 w-12 flex-shrink-0 rounded-3xl bg-rose-600 hover:bg-rose-500 items-center justify-center text-white">
               <i class="fa-solid fa-stop"></i>
             </button>
           </div>
@@ -582,7 +587,7 @@ INDEX_HTML = r"""<!doctype html>
           <input id="custom-model-input" type="text" placeholder="qwen2.5:1.5b or other tag"
                  class="flex-1 bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-2 text-sm focus:border-indigo-500 outline-none"/>
           <button onclick="pullCustomModel()" 
-                  class="px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-sm font-medium">Pull</button>
+                  class="px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-sm font-medium text-white">Pull</button>
         </div>
         <div id="pull-progress" class="mt-3 hidden text-xs log-line bg-zinc-900 border border-zinc-800 rounded-2xl p-2 max-h-24 overflow-auto"></div>
       </div>
@@ -605,7 +610,7 @@ INDEX_HTML = r"""<!doctype html>
           </div>
         </div>
         <div class="mt-3 flex justify-end">
-          <button onclick="saveSettings(); closeModelManager();" class="px-3 py-1 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-xs">Save Settings</button>
+          <button onclick="saveSettings(); closeModelManager();" class="px-3 py-1 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-xs text-white">Save Settings</button>
         </div>
       </div>
     </div>
@@ -713,7 +718,7 @@ INDEX_HTML = r"""<!doctype html>
             <div class="truncate font-medium">${c.title || 'Untitled'}</div>
             <div class="text-xs text-zinc-500 truncate">${c.model || ''}</div>
           </div>
-          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-500 hover:text-rose-400 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs"></i></button>
         `;
         container.appendChild(div);
       });
@@ -843,6 +848,19 @@ INDEX_HTML = r"""<!doctype html>
 
       abortController = new AbortController();
 
+      // helper: tolerant content extraction (handles hailo/ollama variants)
+      function extractToken(obj) {
+        if (!obj) return '';
+        if (obj.message && typeof obj.message.content === 'string') return obj.message.content;
+        if (typeof obj.content === 'string') return obj.content;
+        if (typeof obj.response === 'string') return obj.response;
+        if (obj.delta && typeof obj.delta.content === 'string') return obj.delta.content;
+        if (obj.error) return '[error] ' + (obj.error.message || obj.error || '');
+        return '';
+      }
+
+      let assistantMessage = null;
+
       try {
         const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
@@ -851,17 +869,23 @@ INDEX_HTML = r"""<!doctype html>
             model: currentModel || chat.model,
             messages: chat.messages.map(m => ({ role: m.role, content: m.content })),
             stream: true,
-            options: {} // can be extended with temp etc.
+            options: {}
           }),
           signal: abortController.signal
         });
 
-        if (!res.ok || !res.body) throw new Error('Chat request failed');
+        if (!res.ok || !res.body) {
+          const txt = await res.text().catch(() => '');
+          throw new Error('Chat request failed: ' + res.status + ' ' + txt);
+        }
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let assistantMessage = { role: 'assistant', content: '', ts: Math.floor(Date.now()/1000) };
+        assistantMessage = { role: 'assistant', content: '', ts: Math.floor(Date.now()/1000) };
         chat.messages.push(assistantMessage);
+
+        // Persist the assistant stub immediately so a crash or reload doesn't lose the turn
+        await saveChatRemote(chat);
         renderMessages(chat);
 
         let buffer = '';
@@ -870,7 +894,7 @@ INDEX_HTML = r"""<!doctype html>
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
 
-          // NDJSON style — one JSON object per line (ollama/hailo format)
+          // NDJSON: one JSON per line
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
 
@@ -878,38 +902,52 @@ INDEX_HTML = r"""<!doctype html>
             if (!line.trim()) continue;
             try {
               const obj = JSON.parse(line);
-              if (obj.message && obj.message.content) {
-                assistantMessage.content += obj.message.content;
-              }
-              // also handle done
+              const tok = extractToken(obj);
+              if (tok) assistantMessage.content += tok;
               if (obj.done) {
-                // final
+                // done chunk may still carry final content in some impls
+                const finalTok = extractToken(obj);
+                if (finalTok && !assistantMessage.content.endsWith(finalTok)) assistantMessage.content += finalTok;
               }
-            } catch (e) { /* ignore partial */ }
+            } catch (e) { /* ignore non-json / partial chunks */ }
           }
           renderMessages(chat);
         }
-        // flush remaining buffer
+        // flush last partial line
         if (buffer.trim()) {
           try {
             const obj = JSON.parse(buffer);
-            if (obj.message && obj.message.content) assistantMessage.content += obj.message.content;
+            const tok = extractToken(obj);
+            if (tok) assistantMessage.content += tok;
           } catch(e){}
           renderMessages(chat);
         }
 
-        // persist final
+        // persist the final content
         await saveChatRemote(chat);
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error(err);
-          alert('Generation error: ' + err.message);
+          // surface a minimal error in the chat if we managed to add a stub
+          if (assistantMessage && !assistantMessage.content) {
+            assistantMessage.content = '[generation failed] ' + (err.message || '');
+            renderMessages(chat);
+          } else if (!assistantMessage) {
+            // no stub was added; at least alert
+            alert('Generation error: ' + err.message);
+          }
+        }
+        // always try to persist current state so user msg + any partial/error is kept
+        if (currentChatId) {
+          await saveChatRemote(chat).catch(() => {});
         }
       } finally {
         generationInFlight = false;
         stopBtn.classList.add('hidden');
         stopBtn.classList.remove('flex');
         abortController = null;
+        // refresh list in case title or counts changed
+        refreshChatList().catch(() => {});
       }
     }
 
@@ -978,7 +1016,7 @@ INDEX_HTML = r"""<!doctype html>
           div.className = 'flex items-center justify-between px-3 py-1.5 bg-zinc-800 rounded-2xl text-sm';
           div.innerHTML = `
             <div class="font-mono text-indigo-300">${name}</div>
-            <button class="text-rose-400 hover:text-rose-300 text-xs px-2" onclick="deleteModel('${name}', this)">delete</button>
+            <button class="text-rose-400 hover:text-rose-300 text-xs px-2" onclick="deleteModel('${name}', this)" title="Delete model">delete</button>
           `;
           container.appendChild(div);
         });

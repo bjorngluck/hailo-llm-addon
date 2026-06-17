@@ -1,3 +1,9 @@
+## 2.0.14
+- Persistence: strengthened run.sh — always mkdir the manifests tree under /data/hailo-ollama, seed package manifests into /data on first/missing, improved logging of /data/models + /data/hailo-ollama contents at startup, cleaner exports + symlinks for OLLAMA_MODELS. Follows official HA /data volume guidance.
+- Buttons/icons: consolidated .fa-solid (inherit + explicit size), added text-white + stronger color rules for indigo primary buttons, improved toggle (☰), Models button, Pull, Save, New chat, trash delete, submit (paper plane) visibility and contrast. No more missing or hover-only icons.
+- Chat responses: major robustness in sendMessage — tolerant token extractor (message.content / content / response / delta / error), push+persist assistant stub *immediately* after request succeeds (so restarts mid-reply don't lose the turn), always final + error-path saveChatRemote, better error surfacing inside the thread. Chats should now receive and persist assistant replies.
+- Bumped version to 2.0.14.
+
 ## 2.0.13
 - Made available/recommended model buttons wrap properly inside the Models box using flex-wrap, max-width, and ellipsis on chips.
 - Fixed icon visibility on buttons: added .fa-solid color inherit/white, and specific unicode for trash, check, times, redo, copy. Submit, Models (download), delete, X, save, menu toggle icons now visible.
