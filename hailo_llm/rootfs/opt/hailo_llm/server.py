@@ -1051,11 +1051,18 @@ def run():
     # Best-effort auto-download in background (if enabled in options)
     threading.Thread(target=trigger_auto_download_if_needed, daemon=True).start()
 
-    # Run the development server (perfectly fine for an addon; tini will supervise)
-    # In production HA addon context this is lightweight enough.
     port = int(os.environ.get("PORT", "8000"))
     print(f"[hailo-llm] Web UI + proxy listening on 0.0.0.0:{port}")
-    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False, threaded=True)
+
+    # Use waitress (production WSGI server) instead of Flask's dev server.
+    # This avoids the "development server" warning and is suitable for the addon.
+    try:
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=port, threads=4)
+    except ImportError:
+        # Fallback (should not happen if requirements are installed)
+        print("[hailo-llm] waitress not available, falling back to Flask dev server")
+        app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False, threaded=True)
 
 if __name__ == "__main__":
     run()

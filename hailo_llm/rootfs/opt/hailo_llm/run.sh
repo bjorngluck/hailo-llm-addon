@@ -59,8 +59,11 @@ fi
 #   - Persistent model storage (via OLLAMA_MODELS + symlinks)
 #   - A beautiful interactive chat UI at the ingress
 #   - Unchanged Ollama-compatible API surface for external clients
-echo "Starting hailo-ollama inference server (internal) on 127.0.0.1:11434 ..."
-hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
+#
+# Note: hailo-ollama 5.3+ prefers OLLAMA_HOST env var for the listen address.
+export OLLAMA_HOST=127.0.0.1:11434
+echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
+hailo-ollama serve > /tmp/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
 # Make sure we clean up the background process on exit
@@ -81,6 +84,8 @@ done
 
 if [ "$READY" -ne 1 ]; then
     echo "⚠ hailo-ollama did not become ready in time. Check /tmp/hailo-ollama.log"
+    echo "=== Last lines of hailo-ollama.log ==="
+    tail -30 /tmp/hailo-ollama.log 2>/dev/null || true
     # We still continue — the UI can surface the error
 fi
 
