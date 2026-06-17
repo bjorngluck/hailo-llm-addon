@@ -493,7 +493,7 @@ INDEX_HTML = r"""<!doctype html>
   </div>
 
   <!-- Model Manager Modal -->
-  <div id="model-modal" onclick="if (event.target.id === 'model-modal') closeModelManager()" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div id="model-modal" onclick="if (event.target.id === 'model-modal') closeModelManager()" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" style="display: none;">
     <div onclick="event.stopImmediatePropagation()" class="modern-card w-full max-w-lg rounded-3xl p-5 m-4">
       <div class="flex justify-between items-center mb-4">
         <div class="font-semibold text-lg">Models</div>
@@ -874,16 +874,16 @@ INDEX_HTML = r"""<!doctype html>
     let pullInProgress = false;
 
     function openModelManager() {
-      $('#model-modal').classList.remove('hidden');
-      $('#model-modal').classList.add('flex');
+      const modal = $('#model-modal');
+      modal.style.display = 'flex';
       refreshInstalledModels();
       renderCuratedModels();
       $('#pull-progress').classList.add('hidden');
     }
 
     function closeModelManager() {
-      $('#model-modal').classList.remove('flex');
-      $('#model-modal').classList.add('hidden');
+      const modal = $('#model-modal');
+      modal.style.display = 'none';
       // refresh model list in header
       loadModelsIntoSelect();
     }

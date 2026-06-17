@@ -1,3 +1,8 @@
+## 2.0.8
+- Made modal show/hide use direct style.display = 'flex'/'none' instead of relying only on classList + CSS. This makes the Models panel (and any modals) work reliably even if some Tailwind classes are not applied.
+- Updated initial HTML for model-modal to have style="display: none;" explicitly.
+- Bumped version to 2.0.8.
+
 ## 2.0.7
 - Made API calls robust for HA ingress by introducing explicit INGRESS_BASE using window.location.pathname. All fetch() for api/* and health now construct the correct path under the ingress token (e.g. /api/hassio_ingress/<token>/api/tags). This ensures they are properly proxied by the supervisor to the addon on internal port 8000 instead of hitting HA's root API on 443 (which was causing the persistent 404s).
 - CDN completely removed in previous (self-contained CSS); this version solidifies the relative/ingress-safe fetching.
