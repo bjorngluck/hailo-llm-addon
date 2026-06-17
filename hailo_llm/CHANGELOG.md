@@ -1,3 +1,7 @@
+## 2.0.4
+- UI improvement: Models panel now automatically opens on first load for better discoverability (no need to click "Models" button initially).
+- Minor polish for initial user experience.
+
 ## 2.0.3
 - **Bugfix**: Fixed port conflict on 8000 ("Address already in use"). The `hailo-ollama` binary (v5.3+) primarily respects the `OLLAMA_HOST` environment variable rather than (or in addition to) `--host`/`--port` CLI flags. Now exports `OLLAMA_HOST=127.0.0.1:11434` before launching the binary internally.
 - Switched the web server from Flask's development server to `waitress` (production WSGI) to eliminate the "This is a development server" warning.

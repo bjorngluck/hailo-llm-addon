@@ -918,6 +918,9 @@ INDEX_HTML = r"""<!doctype html>
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 160) + 'px';
       });
+
+      // Auto-load models panel on first load (user request)
+      openModelManager();
     }
 
     // Make curated list available to the embedded script
