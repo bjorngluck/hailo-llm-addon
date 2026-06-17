@@ -60,6 +60,24 @@ if ! command -v hailo-ollama >/dev/null 2>&1; then
     exit 1
 fi
 
+# Setup persistent hailo-ollama directory (copy package manifests on first run, symlink for persistence)
+# This ensures manifests from the deb are in /data (persistent) and the binary finds them.
+if [ ! -d /data/hailo-ollama ]; then
+  if [ -d /usr/share/hailo-ollama ]; then
+    cp -a /usr/share/hailo-ollama /data/hailo-ollama
+  else
+    mkdir -p /data/hailo-ollama/models/manifests
+  fi
+fi
+rm -rf /usr/share/hailo-ollama
+ln -sfn /data/hailo-ollama /usr/share/hailo-ollama
+
+# Ensure OLLAMA_MODELS points to persistent /data/models for downloaded model files
+mkdir -p /data/models
+export OLLAMA_MODELS=/data/models
+mkdir -p /root/.ollama
+ln -sfn /data/models /root/.ollama/models
+
 # === Launch the inference binary on an INTERNAL port only ===
 # We run the real hailo-ollama on 11434 (localhost) and put a Python layer
 # (Flask UI + thin proxy) on the ingress port 8000. This gives us:

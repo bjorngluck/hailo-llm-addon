@@ -265,6 +265,21 @@ INDEX_HTML = r"""<!doctype html>
     .mb-4 { margin-bottom: 1rem; }
     .mb-2 { margin-bottom: 0.5rem; }
     .gap-2 { gap: 0.5rem; }
+    .flex-wrap { flex-wrap: wrap; }
+    #curated-models {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .model-chip {
+      max-width: 100%;
+      flex-shrink: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .gap-3 { gap: 0.75rem; }
     .gap-1\.5 { gap: 0.375rem; }
     .flex-col { flex-direction: column; }
@@ -376,6 +391,14 @@ INDEX_HTML = r"""<!doctype html>
     .fa-times:before { content: "×"; }
     .fa-chevron-down:before { content: "▼"; }
     .fa-robot:before { content: "🤖"; }
+    .fa-trash:before { content: "🗑"; }
+    .fa-check:before { content: "✓"; }
+    .fa-times:before { content: "✕"; }
+    .fa-redo:before { content: "↻"; }
+    .fa-copy:before { content: "⎘"; }
+    .fa-chevron-down:before { content: "▼"; }
+    .fa-solid { font-style: normal; display: inline-block; color: white; }
+    i { color: inherit; }
     #sidebar.collapsed {
       width: 3rem !important;
       overflow: hidden;

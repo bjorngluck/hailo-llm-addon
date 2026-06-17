@@ -1,3 +1,9 @@
+## 2.0.13
+- Made available/recommended model buttons wrap properly inside the Models box using flex-wrap, max-width, and ellipsis on chips.
+- Fixed icon visibility on buttons: added .fa-solid color inherit/white, and specific unicode for trash, check, times, redo, copy. Submit, Models (download), delete, X, save, menu toggle icons now visible.
+- Persistence: improved run.sh to copy package's /usr/share/hailo-ollama to /data/hailo-ollama on first run (if not present), then symlink. This makes manifests and model metadata persistent under /data (HA best practice). Combined with OLLAMA_MODELS=/data/models .
+- Bumped version to 2.0.13.
+
 ## 2.0.12
 - Fixed manifest directory error by removing destructive `rm -rf /usr/share/hailo-ollama/models` (which was deleting the package's installed manifests in models/manifests/). Now preserve the package dir and only symlink user model storage locations.
 - Ensured all text (including message textarea, buttons, etc.) is light color (#e4e4e7) via explicit CSS rules for inputs, textareas, buttons.
