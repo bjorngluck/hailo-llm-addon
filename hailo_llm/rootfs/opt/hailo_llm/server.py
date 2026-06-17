@@ -227,22 +227,127 @@ INDEX_HTML = r"""<!doctype html>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Hailo LLM • Chat</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <!-- External CDNs removed for offline/HA compatibility (Tailwind/FA).
+       Basic styles provided inline below. -->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
     :root { --accent: #6366f1; }
-    body { font-family: 'Inter', system_ui, sans-serif; }
-    .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
-    .chat-container { scrollbar-width: thin; }
-    .message-bubble { max-width: 78%; }
-    .assistant-bubble { background: #1f2937; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #09090b; color: #e4e4e7; margin:0; }
+    .font-display { font-family: system-ui, sans-serif; font-weight: 600; }
+    .flex { display: flex; }
+    .h-screen { height: 100vh; }
+    .overflow-hidden { overflow: hidden; }
+    .w-72 { width: 18rem; }
+    .border-r { border-right: 1px solid #27272a; }
+    .border-zinc-800 { border-color: #27272a; }
+    .bg-zinc-900 { background: #18181b; }
+    .bg-zinc-800 { background: #27272a; }
+    .bg-zinc-950 { background: #09090b; }
+    .text-zinc-200 { color: #e4e4e7; }
+    .text-zinc-500 { color: #71717a; }
+    .text-zinc-400 { color: #a1a1aa; }
+    .text-emerald-400 { color: #4ade80; }
+    .text-amber-400 { color: #fbbf24; }
+    .text-rose-400 { color: #f87171; }
+    .text-indigo-300 { color: #a5b4fc; }
+    .p-4 { padding: 1rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-5 { padding: 1.25rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-1\.5 { gap: 0.375rem; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1 1 0%; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-end { justify-content: flex-end; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-3xl { border-radius: 1.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .border { border: 1px solid #27272a; }
+    .border-t { border-top: 1px solid #27272a; }
+    .border-zinc-700 { border-color: #3f3f46; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-widest { letter-spacing: 0.1em; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .min-w-0 { min-width: 0; }
+    .cursor-pointer { cursor: pointer; }
+    .hidden { display: none; }
+    .block { display: block; }
+    .inline-block { display: inline-block; }
+    .fixed { position: fixed; }
+    .inset-0 { top:0; right:0; bottom:0; left:0; }
+    .z-50 { z-index: 50; }
+    .bg-black\/70 { background: rgba(0,0,0,0.7); }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .max-w-lg { max-width: 32rem; }
+    .max-w-sm { max-width: 24rem; }
+    .m-4 { margin: 1rem; }
+    .space-y-1 > * + * { margin-top: 0.25rem; }
+    .space-y-3 > * + * { margin-top: 0.75rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .transition { transition: all 0.1s ease; }
+    .hover\:bg-zinc-700:hover { background: #3f3f46; }
+    .hover\:bg-zinc-800:hover { background: #27272a; }
+    .hover\:bg-indigo-500:hover { background: #6366f1; }
+    .active\:bg-zinc-900:active { background: #18181b; }
+    .text-indigo-400 { color: #818cf8; }
+    .accent-indigo-500 { accent-color: #6366f1; }
+    .w-full { width: 100%; }
+    .w-4 { width: 1rem; }
+    .h-4 { height: 1rem; }
+    .h-12 { height: 3rem; }
+    .h-9 { height: 2.25rem; }
+    .w-9 { width: 2.25rem; }
+    .resize-y { resize: vertical; }
+    .min-h-\[52px\] { min-height: 52px; }
+    .max-h-40 { max-height: 10rem; }
+    .overflow-auto { overflow: auto; }
+    .whitespace-pre-wrap { white-space: pre-wrap; }
+    .max-w-3xl { max-width: 48rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .p-2 { padding: 0.5rem; }
+    .p-1 { padding: 0.25rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+    .pt-4 { padding-top: 1rem; }
+    .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-1\.5 { margin-top: 0.375rem; }
+    .mb-1 { margin-bottom: 0.25rem; }
+    .mb-5 { margin-bottom: 1.25rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .ml-2 { margin-left: 0.5rem; }
+    .text-center { text-align: center; }
+    .leading-tight { line-height: 1.25; }
+    .tracking-tighter { letter-spacing: -0.05em; }
+    .chat-container { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
+    .message-bubble { max-width: 78%; padding: 0.75rem 1rem; border-radius: 1.25rem; font-size: 0.875rem; white-space: pre-wrap; }
+    .assistant-bubble { background: #1f2937; border: 1px solid #374151; }
     .user-bubble { background: #6366f1; color: white; }
     .streaming::after { content: '▍'; animation: blink 1s step-end infinite; }
     @keyframes blink { 50% { opacity: 0; } }
     .sidebar { transition: transform .2s ease; }
-    .modern-card { background: #111827; border: 1px solid #1f2937; }
-    .model-chip { transition: all .1s ease; }
+    .modern-card { background: #111827; border: 1px solid #1f2937; border-radius: 1.5rem; }
+    .model-chip { transition: all .1s ease; padding: 0.25rem 0.75rem; border-radius: 1rem; background: #27272a; border: 1px solid #3f3f46; font-size: 0.75rem; }
     .model-chip:hover { transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
     .hailo-glow { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
     .log-line { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.75rem; }
@@ -251,7 +356,26 @@ INDEX_HTML = r"""<!doctype html>
       -moz-appearance: none;
       appearance: none;
       background-image: none !important;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      color: #e4e4e7;
+      font-size: 0.875rem;
+      padding: 0.375rem 2rem 0.375rem 0.75rem;
+      border-radius: 1rem;
     }
+    .fa-solid { font-style: normal; }
+    .fa-microchip:before { content: "⚙"; }
+    .fa-plus:before { content: "+"; }
+    .fa-download:before { content: "⬇"; }
+    .fa-bolt:before { content: "⚡"; }
+    .fa-cog:before { content: "⚙"; }
+    .fa-paper-plane:before { content: "➤"; }
+    .fa-stop:before { content: "■"; }
+    .fa-redo:before { content: "↻"; }
+    .fa-copy:before { content: "⎘"; }
+    .fa-times:before { content: "×"; }
+    .fa-chevron-down:before { content: "▼"; }
+    .fa-robot:before { content: "🤖"; }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
@@ -426,6 +550,11 @@ INDEX_HTML = r"""<!doctype html>
 
   <script>
     // ============== Tiny client-side app ==============
+    // Use ingress base so API calls go to the correct proxied path under HA ingress.
+    // This makes /api/* etc. resolve to /api/hassio_ingress/<token>/api/* which the
+    // supervisor forwards to the addon on port 8000.
+    const INGRESS_BASE = (window.location.pathname || '/').replace(/\/$/, '') + '/';
+
     let currentChatId = null;
     let currentModel = "";
     let abortController = null;
@@ -441,7 +570,7 @@ INDEX_HTML = r"""<!doctype html>
 
     async function loadModelsIntoSelect() {
       try {
-        const res = await fetch('/api/tags');
+        const res = await fetch(INGRESS_BASE + 'api/tags');
         const data = await res.json();
         const sel = $('#model-select');
         sel.innerHTML = '';
@@ -489,13 +618,13 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     async function fetchChat(chatId) {
-      const res = await fetch('/api/chats/' + chatId);
+      const res = await fetch(INGRESS_BASE + 'api/chats/' + chatId);
       if (!res.ok) return null;
       return res.json();
     }
 
     async function saveChatRemote(chat) {
-      await fetch('/api/chats/' + chat.id, {
+      await fetch(INGRESS_BASE + 'api/chats/' + chat.id, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(chat)
@@ -504,7 +633,7 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     async function refreshChatList() {
-      const res = await fetch('/api/chats');
+      const res = await fetch(INGRESS_BASE + 'api/chats');
       const list = await res.json();
       const container = $('#chat-list');
       container.innerHTML = '';
@@ -589,7 +718,7 @@ INDEX_HTML = r"""<!doctype html>
 
     async function createNewChat(preferredModel) {
       const model = preferredModel || currentModel || '';
-      const chat = await (await fetch('/api/chats', {
+      const chat = await (await fetch(INGRESS_BASE + 'api/chats', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ model })
@@ -605,7 +734,7 @@ INDEX_HTML = r"""<!doctype html>
 
     async function deleteChat(chatId) {
       if (!confirm('Delete this conversation?')) return;
-      await fetch('/api/chats/' + chatId, { method: 'DELETE' });
+      await fetch(INGRESS_BASE + 'api/chats/' + chatId, { method: 'DELETE' });
       if (currentChatId === chatId) {
         currentChatId = null;
         $('#chat-messages').innerHTML = '';
@@ -643,7 +772,7 @@ INDEX_HTML = r"""<!doctype html>
       abortController = new AbortController();
 
       try {
-        const res = await fetch('/api/chat', {
+        const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -763,7 +892,7 @@ INDEX_HTML = r"""<!doctype html>
       const container = $('#installed-models');
       container.innerHTML = '<div class="text-xs text-zinc-500 px-1 py-1">Loading...</div>';
       try {
-        const res = await fetch('/api/tags');
+        const res = await fetch(INGRESS_BASE + 'api/tags');
         const data = await res.json();
         const models = data.models || [];
         container.innerHTML = '';
@@ -782,7 +911,7 @@ INDEX_HTML = r"""<!doctype html>
           container.appendChild(div);
         });
       } catch (e) {
-        container.innerHTML = '<div class="text-xs text-rose-400 px-1">Failed to load installed models</div>';
+        container.innerHTML = '<div class="text-xs text-amber-400 px-1">Backend starting or no models yet. Use the recommended buttons or pull one.</div>';
       }
     }
 
@@ -806,7 +935,7 @@ INDEX_HTML = r"""<!doctype html>
       progress.innerHTML = `<div class="text-emerald-400">Pulling ${name}...</div>`;
 
       try {
-        const res = await fetch('/api/pull', {
+        const res = await fetch(INGRESS_BASE + 'api/pull', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ model: name, stream: true })
@@ -855,7 +984,7 @@ INDEX_HTML = r"""<!doctype html>
       if (!confirm(`Delete model "${name}"?`)) return;
       btn.textContent = '…';
       try {
-        await fetch('/api/delete', {
+        await fetch(INGRESS_BASE + 'api/delete', {
           method: 'DELETE',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ name })
@@ -879,7 +1008,7 @@ INDEX_HTML = r"""<!doctype html>
     async function initUI() {
       // Device status
       try {
-        const h = await fetch('/health');
+        const h = await fetch(INGRESS_BASE + 'health');
         const data = await h.json();
         const el = $('#device-text');
         if (data.hailo_device) {
@@ -898,7 +1027,7 @@ INDEX_HTML = r"""<!doctype html>
       await refreshChatList();
 
       // If no chats, start one
-      const listRes = await fetch('/api/chats');
+      const listRes = await fetch(INGRESS_BASE + 'api/chats');
       const chats = await listRes.json();
       if (chats.length === 0) {
         await createNewChat();
