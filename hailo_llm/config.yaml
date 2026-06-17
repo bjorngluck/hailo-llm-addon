@@ -1,6 +1,6 @@
 name: "Hailo LLM"
 description: "Hailo-10H Model Zoo + Ollama LLM server"
-version: "2.0.16"
+version: "2.0.17"
 slug: "hailo_llm"
 url: "https://github.com/bjorngluck/hailo-llm-addon"
 arch:
@@ -23,8 +23,10 @@ timeout: 300
 ports:
   8000/tcp: 8000
 map:
-  - type: media
-    read_only: false
+  - "media:rw"
+  - "addon_config:rw"
+  - "homeassistant_config:rw"
+  - "ssl"
 options:
   keep_alive: "300m"
   auto_download_model: false

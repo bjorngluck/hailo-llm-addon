@@ -457,6 +457,28 @@ INDEX_HTML = r"""<!doctype html>
     button .fa-solid {
       color: inherit !important;
     }
+    /* Fix remaining secondary icon buttons (top Models, minimise ☰, delete chat) appearing white or invisible.
+       Use theme colors with !important for visibility on dark bg. Match background/contrast better. */
+    button.text-zinc-200,
+    button.text-zinc-400,
+    #sidebar button,
+    button[onclick*="openModelManager"] {
+      color: #e4e4e7 !important;
+    }
+    button.text-zinc-200 i.fa-solid,
+    button.text-zinc-400 i.fa-solid,
+    #sidebar button i.fa-solid,
+    button[onclick*="openModelManager"] i.fa-solid {
+      color: inherit !important;
+    }
+    /* Keep accent for download icon but ensure it shows */
+    button[onclick*="openModelManager"] i.fa-solid {
+      color: #818cf8 !important;
+    }
+    /* Slightly softer for secondary to "match" dark theme better */
+    .text-zinc-400 {
+      color: #a1a1aa !important;
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
@@ -517,8 +539,8 @@ INDEX_HTML = r"""<!doctype html>
             </div>
             <button onclick="openModelManager()"
                     class="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-zinc-700 hover:bg-zinc-800 active:bg-zinc-900 text-zinc-200">
-              <i class="fa-solid fa-download text-indigo-400"></i>
-              <span>Models</span>
+              <i class="fa-solid fa-download"></i>
+              <span class="text-zinc-200">Models</span>
             </button>
           </div>
         </div>
@@ -732,7 +754,7 @@ INDEX_HTML = r"""<!doctype html>
             <div class="truncate font-medium">${c.title || 'Untitled'}</div>
             <div class="text-xs text-zinc-500 truncate">${c.model || ''}</div>
           </div>
-          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs"></i></button>
+          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs text-zinc-400"></i></button>
         `;
         container.appendChild(div);
       });
@@ -884,13 +906,15 @@ INDEX_HTML = r"""<!doctype html>
       console.log('[send] starting /api/chat for model', currentModel || chat.model);
 
       try {
+        // Use stream: false for reliable full response (streaming NDJSON can be buffered by ingress/proxy).
+        // This ensures we get a response even if the binary returns a single JSON object.
         const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel || chat.model,
             messages: chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })), // exclude the empty stub
-            stream: true,
+            stream: false,
             options: {}
           }),
           signal: abortController.signal
@@ -898,52 +922,26 @@ INDEX_HTML = r"""<!doctype html>
 
         console.log('[send] /api/chat response', res.status, res.headers.get('content-type'));
 
-        if (!res.ok || !res.body) {
+        if (!res.ok) {
           const txt = await res.text().catch(() => '');
           throw new Error('Chat request failed: ' + res.status + ' ' + txt);
         }
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
+        const data = await res.json();
+        console.log('[send] full response data', data);
 
-        let buffer = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          // NDJSON: one JSON per line
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const obj = JSON.parse(line);
-              console.log('[send] chunk', obj);  // diagnostic: check what the backend actually emits
-              const tok = extractToken(obj);
-              if (tok) assistantMessage.content += tok;
-              if (obj.done) {
-                const finalTok = extractToken(obj);
-                if (finalTok && !assistantMessage.content.endsWith(finalTok)) assistantMessage.content += finalTok;
-              }
-            } catch (e) { /* ignore non-json / partial chunks */ }
-          }
-          renderMessages(chat);
-        }
-        // flush last partial line
-        if (buffer.trim()) {
-          try {
-            const obj = JSON.parse(buffer);
-            const tok = extractToken(obj);
-            if (tok) assistantMessage.content += tok;
-          } catch(e){}
-          renderMessages(chat);
+        const tok = extractToken(data);
+        if (tok) {
+          assistantMessage.content = tok;
+        } else if (data.message && data.message.content) {
+          assistantMessage.content = data.message.content;
+        } else if (data.response) {
+          assistantMessage.content = data.response;
+        } else {
+          assistantMessage.content = '[No content in response from model]';
         }
 
-        if (!assistantMessage.content.trim()) {
-          assistantMessage.content = '[No response received from model. Check logs / console for chunks.]';
-        }
+        renderMessages(chat);
 
         // persist the final content
         await saveChatRemote(chat);

@@ -1,3 +1,9 @@
+## 2.0.17
+- config.yaml map updated to "media:rw" + addon_config etc to match Frigate-H10 example for reliable rw access to /media.
+- Switched chat send to stream:false + direct JSON parse for reliable full response (streaming was often empty or not producing assistant content due to proxy/NDJSON issues).
+- Fixed secondary icon buttons (top "Models", sidebar minimise ☰, delete chat trash) still appearing white/invisible: added stronger !important color rules for .text-zinc-* and fa-solid in those buttons to ensure theme colors (light gray + accent) are used on dark backgrounds.
+- Bumped to 2.0.17.
+
 ## 2.0.16
 - Switch model storage to /media/hailo_llm (following Frigate-H10 addon pattern).
   - OLLAMA_MODELS and hailo-ollama (manifests + HEF files) now live under /media/hailo_llm/models and /media/hailo_llm/hailo-ollama
