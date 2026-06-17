@@ -1,3 +1,12 @@
+## 2.0.5
+- UI fixes: Integrated settings section directly into the Models panel for cleaner layout (no more separate broken modal or overlapping content).
+- Removed the gear icon and old settings modal (settings now live inside Models).
+- Fixed double down-arrow on model selector with proper CSS (appearance: none).
+- Softer "Backend starting" message instead of hard "Health check failed".
+- Better placeholder in model selector when no models ("— pull a model first —" and disabled).
+- Models panel auto-opens on first load (from previous).
+- Bumped version to 2.0.5.
+
 ## 2.0.4
 - UI improvement: Models panel now automatically opens on first load for better discoverability (no need to click "Models" button initially).
 - Minor polish for initial user experience.
