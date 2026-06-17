@@ -27,9 +27,11 @@ chmod 755 /data/models 2>/dev/null || true
 rm -rf /root/.ollama/models 2>/dev/null || true
 rm -rf /usr/share/hailo-ollama/models 2>/dev/null || true
 
+# Ensure the hailo-ollama manifest directories exist (binary requires "hailo-ollama directory" for manifests from the package)
+mkdir -p /usr/share/hailo-ollama /usr/share/hailo-ollama/manifests /usr/share/hailo-models /root/.ollama /root/hailo-ollama /root/.hailo-ollama /opt/hailo-ollama
+
 # Defensive symlinks so the hailo-ollama binary finds models no matter which path it probes
 # (community reports show it has used ~/.ollama, /usr/share/hailo-ollama etc.)
-mkdir -p /root/.ollama
 ln -sfn /data/models /root/.ollama/models
 ln -sfn /data/models /usr/share/hailo-ollama/models 2>/dev/null || true
 ln -sfn /data/models /usr/share/hailo-models 2>/dev/null || true

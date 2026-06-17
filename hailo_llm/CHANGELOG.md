@@ -1,3 +1,8 @@
+## 2.0.11
+- Fixed hailo-ollama startup crash: "Failed to find manifest directory: hailo-ollama directory not found" (followed by abort/core dump). Added explicit `mkdir -p` for required manifest directories (`/usr/share/hailo-ollama`, `/usr/share/hailo-ollama/manifests`, `/root/.hailo-ollama`, `/opt/hailo-ollama`, etc.) before symlinks and binary start. This ensures the package's manifest dir is present at runtime.
+- Cleaned up model persistence setup in run.sh (stronger dir creation, cleanup of stale locations, reinforced OLLAMA_MODELS and symlinks).
+- Bumped version to 2.0.11.
+
 ## 2.0.10
 - Sidebar is now collapsible via ☰ button (and auto-collapses on small screens <768px) to fix mobile layout taking too much space.
 - Enhanced model persistence: more aggressive cleanup of stale non-persistent model dirs, explicit OLLAMA_MODELS export, and permission fixes in run.sh.
