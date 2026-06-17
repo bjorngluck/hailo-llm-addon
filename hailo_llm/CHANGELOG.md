@@ -1,3 +1,10 @@
+## 2.0.3
+- **Bugfix**: Fixed port conflict on 8000 ("Address already in use"). The `hailo-ollama` binary (v5.3+) primarily respects the `OLLAMA_HOST` environment variable rather than (or in addition to) `--host`/`--port` CLI flags. Now exports `OLLAMA_HOST=127.0.0.1:11434` before launching the binary internally.
+- Switched the web server from Flask's development server to `waitress` (production WSGI) to eliminate the "This is a development server" warning.
+- Added `waitress` to `requirements.txt`.
+- Improved diagnostics: on binary readiness timeout, now prints the last 30 lines of `/tmp/hailo-ollama.log`.
+- Bumped version to 2.0.3.
+
 ## 2.0.2
 - **Bugfix**: Fixed `ModuleNotFoundError: No module named 'flask'` (and missing `requests`). The Dockerfile did not install the Python dependencies listed in `requirements.txt`. Originally the Python server was never executed (the binary was exec'd directly), so the pip step was missing. Added `pip3 install -r /opt/hailo_llm/requirements.txt` after copying rootfs (with `|| true` to match existing install style). This was the root cause of the UI not rendering properly (downloadfile-bin symptom).
 - Bumped version to 2.0.2.
