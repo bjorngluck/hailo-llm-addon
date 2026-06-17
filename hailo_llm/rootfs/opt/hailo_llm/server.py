@@ -324,6 +324,14 @@ INDEX_HTML = r"""<!doctype html>
     .hover\:bg-zinc-800:hover { background: #27272a; }
     .hover\:bg-indigo-500:hover { background: #6366f1; }
     .active\:bg-zinc-900:active { background: #18181b; }
+    /* Indigo and rose backgrounds for primary action buttons (was missing - caused white/blank button bg) */
+    .bg-indigo-600 { background: #6366f1; }
+    .bg-indigo-500 { background: #6366f1; }
+    .bg-indigo-700 { background: #4338ca; }
+    .active\:bg-indigo-700:active { background: #4338ca; }
+    .bg-rose-600 { background: #e11d48; }
+    .bg-rose-500 { background: #f43f5e; }
+    .hover\:bg-rose-500:hover { background: #f43f5e; }
     .text-indigo-400 { color: #818cf8; }
     .accent-indigo-500 { accent-color: #6366f1; }
     .w-full { width: 100%; }
@@ -436,8 +444,13 @@ INDEX_HTML = r"""<!doctype html>
       background-color: #27272a;
       border-color: #3f3f46;
     }
-    /* Primary action buttons: force readable text/icon on indigo */
+    /* Primary action buttons: ensure bg + readable white text/icon on indigo/rose */
     .bg-indigo-600, button.bg-indigo-600, button[class*="indigo-600"] {
+      background: #6366f1 !important;
+      color: #ffffff !important;
+    }
+    .bg-rose-600, button.bg-rose-600 {
+      background: #e11d48 !important;
       color: #ffffff !important;
     }
     button .fa-solid {
@@ -859,7 +872,15 @@ INDEX_HTML = r"""<!doctype html>
         return '';
       }
 
-      let assistantMessage = null;
+      // ALWAYS create assistant stub immediately and persist it.
+      // This guarantees that after sending a user message, the chat will have an assistant turn
+      // (with content or an error note) even if streaming fails completely.
+      let assistantMessage = { role: 'assistant', content: '', ts: Math.floor(Date.now()/1000) };
+      chat.messages.push(assistantMessage);
+      await saveChatRemote(chat);
+      renderMessages(chat);
+
+      console.log('[send] starting /api/chat for model', currentModel || chat.model);
 
       try {
         const res = await fetch(INGRESS_BASE + 'api/chat', {
@@ -867,12 +888,14 @@ INDEX_HTML = r"""<!doctype html>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel || chat.model,
-            messages: chat.messages.map(m => ({ role: m.role, content: m.content })),
+            messages: chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })), // exclude the empty stub
             stream: true,
             options: {}
           }),
           signal: abortController.signal
         });
+
+        console.log('[send] /api/chat response', res.status, res.headers.get('content-type'));
 
         if (!res.ok || !res.body) {
           const txt = await res.text().catch(() => '');
@@ -881,12 +904,6 @@ INDEX_HTML = r"""<!doctype html>
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        assistantMessage = { role: 'assistant', content: '', ts: Math.floor(Date.now()/1000) };
-        chat.messages.push(assistantMessage);
-
-        // Persist the assistant stub immediately so a crash or reload doesn't lose the turn
-        await saveChatRemote(chat);
-        renderMessages(chat);
 
         let buffer = '';
         while (true) {
@@ -902,10 +919,10 @@ INDEX_HTML = r"""<!doctype html>
             if (!line.trim()) continue;
             try {
               const obj = JSON.parse(line);
+              console.log('[send] chunk', obj);  // diagnostic: check what the backend actually emits
               const tok = extractToken(obj);
               if (tok) assistantMessage.content += tok;
               if (obj.done) {
-                // done chunk may still carry final content in some impls
                 const finalTok = extractToken(obj);
                 if (finalTok && !assistantMessage.content.endsWith(finalTok)) assistantMessage.content += finalTok;
               }
@@ -923,21 +940,21 @@ INDEX_HTML = r"""<!doctype html>
           renderMessages(chat);
         }
 
+        if (!assistantMessage.content.trim()) {
+          assistantMessage.content = '[No response received from model. Check logs / console for chunks.]';
+        }
+
         // persist the final content
         await saveChatRemote(chat);
       } catch (err) {
         if (err.name !== 'AbortError') {
-          console.error(err);
-          // surface a minimal error in the chat if we managed to add a stub
-          if (assistantMessage && !assistantMessage.content) {
-            assistantMessage.content = '[generation failed] ' + (err.message || '');
-            renderMessages(chat);
-          } else if (!assistantMessage) {
-            // no stub was added; at least alert
-            alert('Generation error: ' + err.message);
+          console.error('[send] generation error', err);
+          if (!assistantMessage.content) {
+            assistantMessage.content = '[generation failed] ' + (err.message || 'see browser console and addon logs');
           }
+          renderMessages(chat);
         }
-        // always try to persist current state so user msg + any partial/error is kept
+        // always persist so the turn is recorded
         if (currentChatId) {
           await saveChatRemote(chat).catch(() => {});
         }

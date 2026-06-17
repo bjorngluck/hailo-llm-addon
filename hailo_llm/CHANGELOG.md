@@ -1,3 +1,9 @@
+## 2.0.15
+- Persistence: stronger setup in run.sh — always merge (no-clobber) latest package manifests, additional persistent symlinks for common HEF/cache locations (/root/.cache/hailo*, /var/lib/hailo-ollama), explicit OLLAMA_MODELS on the serve command line, chmod a+w like the deb postinst, expanded startup diagnostics (now logs cache + var/lib too). This should ensure both manifests and the actual model (HEF by hash) files survive restarts when written during /api/pull.
+- Buttons: root cause was missing CSS rules for .bg-indigo-600 / .bg-rose-600 (and active/hover variants) — only hovers and zinc bgs were defined, so primary buttons had no (or default white) background making white icons invisible or "still white". Added full base background rules + reinforced in the primary selector.
+- Chat: always create + persist assistant stub immediately after user message (before the /api/chat call). On any failure or empty stream we now still save a turn with a diagnostic message. Added console.log for response status and every parsed chunk so you can inspect in DevTools exactly what hailo-ollama /api/chat returns. Uses slice to avoid sending the stub in the prompt.
+- Bumped to 2.0.15.
+
 ## 2.0.14
 - Persistence: strengthened run.sh — always mkdir the manifests tree under /data/hailo-ollama, seed package manifests into /data on first/missing, improved logging of /data/models + /data/hailo-ollama contents at startup, cleaner exports + symlinks for OLLAMA_MODELS. Follows official HA /data volume guidance.
 - Buttons/icons: consolidated .fa-solid (inherit + explicit size), added text-white + stronger color rules for indigo primary buttons, improved toggle (☰), Models button, Pull, Save, New chat, trash delete, submit (paper plane) visibility and contrast. No more missing or hover-only icons.

@@ -31,19 +31,22 @@ rm -rf /root/.ollama/models 2>/dev/null || true
 
 # Always ensure the target persistent structure has the manifests tree the binary expects.
 # Package lays out: /usr/share/hailo-ollama/models/manifests/<name>/<tag>/manifest.json
-mkdir -p /data/hailo-ollama/models/manifests
+# and the actual HEF model files (referenced by hef_h10h hash in manifests) are stored
+# under the models tree or OLLAMA_MODELS when "pulled".
+mkdir -p /data/hailo-ollama/models/manifests /data/hailo-ollama/models
 
-# On first run (or if manifests missing), copy the package-provided manifests into persistent storage.
-if [ ! -d /data/hailo-ollama/models/manifests ] || [ -z "$(ls /data/hailo-ollama/models/manifests 2>/dev/null)" ]; then
-  if [ -d /usr/share/hailo-ollama/models/manifests ]; then
-    echo "[persistence] Seeding /data/hailo-ollama/models/manifests from package..."
-    mkdir -p /data/hailo-ollama/models
-    cp -a /usr/share/hailo-ollama/models/manifests /data/hailo-ollama/models/ 2>/dev/null || true
-  fi
+# Merge package manifests (new ones from package updates) without clobbering any
+# additional manifests or files created by previous pulls/activations.
+if [ -d /usr/share/hailo-ollama/models/manifests ]; then
+  echo "[persistence] Merging package manifests into persistent /data/hailo-ollama ..."
+  cp -a --no-clobber /usr/share/hailo-ollama/models/manifests/* /data/hailo-ollama/models/manifests/ 2>/dev/null || true
 fi
 
+# Also ensure any HEF blobs or model files that may land under the share tree are under /data
+mkdir -p /data/hailo-ollama/models
+
 # Replace any in-image /usr/share/hailo-ollama with a symlink to the persistent copy so the binary
-# finds (and writes) manifests persistently.
+# finds (and writes) manifests + any HEF files persistently.
 rm -rf /usr/share/hailo-ollama 2>/dev/null || true
 ln -sfn /data/hailo-ollama /usr/share/hailo-ollama
 
@@ -54,18 +57,35 @@ mkdir -p /usr/share/hailo-models /root/.ollama /root/hailo-ollama /root/.hailo-o
 mkdir -p /root/.ollama
 ln -sfn /data/models /root/.ollama/models
 
+# Persist likely locations for downloaded/activated HEF model files (hashes from manifests).
+# The SimpleModelStore in the binary may write HEFs to cache, var, or under the share/models.
+mkdir -p /data/cache/hailo /data/cache/hailo-ollama /data/var/lib/hailo-ollama
+rm -rf /root/.cache/hailo* 2>/dev/null || true
+mkdir -p /root/.cache
+ln -sfn /data/cache/hailo /root/.cache/hailo
+ln -sfn /data/cache/hailo-ollama /root/.cache/hailo-ollama
+ln -sfn /data/var/lib/hailo-ollama /var/lib/hailo-ollama 2>/dev/null || true
+
 # Ensure OLLAMA_MODELS is set for the child processes (weights + any ollama-style manifests)
 export OLLAMA_MODELS=/data/models
 mkdir -p /data/models/manifests /data/models/blobs 2>/dev/null || true
+
+# Match postinst permissions so the binary can write
+chmod -R a+w /data/hailo-ollama 2>/dev/null || true
+chmod -R a+w /data/models 2>/dev/null || true
 
 echo "=== Persistence layout ==="
 echo "OLLAMA_MODELS=$OLLAMA_MODELS"
 echo "/data/models contents:"
 ls -la /data/models 2>/dev/null | head -20 || echo "  (empty or not readable)"
-echo "/data/hailo-ollama (manifests home) contents:"
+echo "/data/hailo-ollama (manifests + hef home) contents:"
 ls -la /data/hailo-ollama 2>/dev/null | head -10 || echo "  (empty)"
 echo "/data/hailo-ollama/models/manifests sample:"
 ls -la /data/hailo-ollama/models/manifests 2>/dev/null | head -10 || echo "  (no manifests yet)"
+echo "/data/cache/hailo contents:"
+ls -la /data/cache/hailo 2>/dev/null | head -5 || echo "  (empty)"
+echo "/var/lib/hailo-ollama (symlinked):"
+ls -la /var/lib/hailo-ollama 2>/dev/null | head -5 || echo "  (empty or not linked)"
 
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
@@ -95,6 +115,7 @@ fi
 export OLLAMA_MODELS=/data/models
 mkdir -p /data/models /root/.ollama
 ln -sfn /data/models /root/.ollama/models 2>/dev/null || true
+chmod -R a+w /data/hailo-ollama /data/models 2>/dev/null || true
 
 # === Launch the inference binary on an INTERNAL port only ===
 # We run the real hailo-ollama on 11434 (localhost) and put a Python layer
@@ -106,7 +127,8 @@ ln -sfn /data/models /root/.ollama/models 2>/dev/null || true
 # Note: hailo-ollama 5.3+ prefers OLLAMA_HOST env var for the listen address.
 export OLLAMA_HOST=127.0.0.1:11434
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
-OLLAMA_HOST=127.0.0.1:11434 hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
+# Explicitly pass both OLLAMA_* so the SimpleModelStore and manifest logic use persistent paths
+OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS=/data/models hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
 # Make sure we clean up the background process on exit
