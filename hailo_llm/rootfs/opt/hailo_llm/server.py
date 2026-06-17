@@ -487,7 +487,7 @@ INDEX_HTML = r"""<!doctype html>
     <div id="sidebar" class="w-72 border-r border-zinc-800 bg-zinc-900 flex flex-col">
       <!-- Header -->
       <div class="p-4 border-b border-zinc-800 flex items-center gap-3">
-        <button onclick="toggleSidebar()" class="text-zinc-200 hover:text-white p-1 text-lg leading-none" title="Toggle sidebar" aria-label="Toggle sidebar">☰</button>
+        <button onclick="toggleSidebar()" class="text-zinc-200 hover:text-white p-1 text-lg leading-none" title="Toggle sidebar" aria-label="Toggle sidebar" style="color:#e4e4e7">☰</button>
         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
           <i class="fa-solid fa-microchip text-lg"></i>
         </div>
@@ -539,8 +539,8 @@ INDEX_HTML = r"""<!doctype html>
             </div>
             <button onclick="openModelManager()"
                     class="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-zinc-700 hover:bg-zinc-800 active:bg-zinc-900 text-zinc-200">
-              <i class="fa-solid fa-download"></i>
-              <span class="text-zinc-200">Models</span>
+              <i class="fa-solid fa-download" style="color:#818cf8"></i>
+              <span style="color:#e4e4e7">Models</span>
             </button>
           </div>
         </div>
@@ -754,7 +754,7 @@ INDEX_HTML = r"""<!doctype html>
             <div class="truncate font-medium">${c.title || 'Untitled'}</div>
             <div class="text-xs text-zinc-500 truncate">${c.model || ''}</div>
           </div>
-          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs text-zinc-400"></i></button>
+          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs" style="color:#a1a1aa"></i></button>
         `;
         container.appendChild(div);
       });

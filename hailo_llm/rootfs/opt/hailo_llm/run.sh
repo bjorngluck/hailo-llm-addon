@@ -19,49 +19,39 @@ echo "Models dir (persisted): /media/hailo_llm/models   (host: /media/hailo_llm/
 echo "Auto-download:     $AUTO_DOWNLOAD"
 echo "=========================================="
 
-# Early export so any child processes see it
-export OLLAMA_MODELS=/media/hailo_llm/models
+# Early export
+export OLLAMA_MODELS=/media/hailo_llm/hailo-ollama/models
 
 # Chats stay in private /data (small JSONs)
 mkdir -p /data/chats
 
 # Use /media for large model files (HEF) following patterns from other Hailo addons (e.g. Frigate-H10)
-# /media is easily accessible on the host via Samba, Filebrowser, etc. and persists.
+# All model related storage (manifests, blobs, HEFs) under one tree in media for persistence and easy host access.
 MEDIA_BASE=/media/hailo_llm
-mkdir -p "$MEDIA_BASE/models" "$MEDIA_BASE/hailo-ollama"
-chmod -R 755 "$MEDIA_BASE/models" 2>/dev/null || true
+mkdir -p "$MEDIA_BASE/hailo-ollama/models/manifests" "$MEDIA_BASE/hailo-ollama/models/blobs" "$MEDIA_BASE/hailo-ollama"
+chmod -R 755 "$MEDIA_BASE/hailo-ollama" 2>/dev/null || true
 
 # Make sure no stale non-persistent models dirs interfere
 rm -rf /root/.ollama/models 2>/dev/null || true
 
-# Always ensure the target persistent structure has the manifests tree the binary expects.
-# Package lays out: /usr/share/hailo-ollama/models/manifests/<name>/<tag>/manifest.json
-# We keep the hailo-ollama tree (manifests + models) under /media/hailo_llm so large HEF files
-# are stored accessibly (following Frigate-Hailo addon pattern that uses /media/frigate).
-MEDIA_BASE=/media/hailo_llm
-mkdir -p "$MEDIA_BASE/hailo-ollama/models/manifests" "$MEDIA_BASE/hailo-ollama/models"
-
-# Merge package manifests (new ones from package updates) without clobbering any
-# additional manifests or files created by previous pulls/activations.
+# Merge package manifests into the persistent location under media/hailo-ollama
 if [ -d /usr/share/hailo-ollama/models/manifests ]; then
   echo "[persistence] Merging package manifests into persistent $MEDIA_BASE/hailo-ollama ..."
   cp -a --no-clobber /usr/share/hailo-ollama/models/manifests/* "$MEDIA_BASE/hailo-ollama/models/manifests/" 2>/dev/null || true
 fi
 
-# Replace any in-image /usr/share/hailo-ollama with a symlink to the persistent copy so the binary
-# finds (and writes) manifests + any HEF files persistently.
+# Symlink so the binary finds the manifests and writes HEFs persistently under media
 rm -rf /usr/share/hailo-ollama 2>/dev/null || true
 ln -sfn "$MEDIA_BASE/hailo-ollama" /usr/share/hailo-ollama
 
-# Also prepare other locations the binary or ollama compat layer might reference.
+# Prepare other locations
 mkdir -p /usr/share/hailo-models /root/.ollama /root/hailo-ollama /root/.hailo-ollama /opt/hailo-ollama
 
-# Defensive symlink for classic ollama layout (point to media models)
+# Symlink classic ollama layout to our media location
 mkdir -p /root/.ollama
-ln -sfn "$MEDIA_BASE/models" /root/.ollama/models
+ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models
 
-# Persist likely locations for downloaded/activated HEF model files under media.
-# Redirect common cache locations into the media tree as well.
+# Redirect caches
 mkdir -p "$MEDIA_BASE/cache/hailo" "$MEDIA_BASE/cache/hailo-ollama" "$MEDIA_BASE/var/lib/hailo-ollama"
 rm -rf /root/.cache/hailo* 2>/dev/null || true
 mkdir -p /root/.cache
@@ -69,18 +59,15 @@ ln -sfn "$MEDIA_BASE/cache/hailo" /root/.cache/hailo
 ln -sfn "$MEDIA_BASE/cache/hailo-ollama" /root/.cache/hailo-ollama
 ln -sfn "$MEDIA_BASE/var/lib/hailo-ollama" /var/lib/hailo-ollama 2>/dev/null || true
 
-# Ensure OLLAMA_MODELS is set for the child processes
-export OLLAMA_MODELS="$MEDIA_BASE/models"
-mkdir -p "$MEDIA_BASE/models/manifests" "$MEDIA_BASE/models/blobs" 2>/dev/null || true
+# Final OLLAMA_MODELS
+export OLLAMA_MODELS="$MEDIA_BASE/hailo-ollama/models"
 
-# Match postinst permissions so the binary can write
-chmod -R a+w "$MEDIA_BASE/hailo-ollama" "$MEDIA_BASE/models" 2>/dev/null || true
+# Permissions
+chmod -R a+w "$MEDIA_BASE/hailo-ollama" 2>/dev/null || true
 
 echo "=== Persistence layout ==="
 echo "OLLAMA_MODELS=$OLLAMA_MODELS"
-echo "$MEDIA_BASE/models contents:"
-ls -la "$MEDIA_BASE/models" 2>/dev/null | head -20 || echo "  (empty or not readable)"
-echo "$MEDIA_BASE/hailo-ollama (manifests + hef home) contents:"
+echo "$MEDIA_BASE/hailo-ollama contents:"
 ls -la "$MEDIA_BASE/hailo-ollama" 2>/dev/null | head -10 || echo "  (empty)"
 echo "$MEDIA_BASE/hailo-ollama/models/manifests sample:"
 ls -la "$MEDIA_BASE/hailo-ollama/models/manifests" 2>/dev/null | head -10 || echo "  (no manifests yet)"
@@ -112,10 +99,10 @@ if ! command -v hailo-ollama >/dev/null 2>&1; then
 fi
 
 # (Persistence already prepared earlier — re-export here right before launch for safety)
-export OLLAMA_MODELS="$MEDIA_BASE/models"
-mkdir -p "$MEDIA_BASE/models" /root/.ollama
-ln -sfn "$MEDIA_BASE/models" /root/.ollama/models 2>/dev/null || true
-chmod -R a+w "$MEDIA_BASE/hailo-ollama" "$MEDIA_BASE/models" 2>/dev/null || true
+export OLLAMA_MODELS="$MEDIA_BASE/hailo-ollama/models"
+mkdir -p "$MEDIA_BASE/hailo-ollama/models" /root/.ollama
+ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || true
+chmod -R a+w "$MEDIA_BASE/hailo-ollama" 2>/dev/null || true
 
 # === Launch the inference binary on an INTERNAL port only ===
 # We run the real hailo-ollama on 11434 (localhost) and put a Python layer
@@ -128,7 +115,7 @@ chmod -R a+w "$MEDIA_BASE/hailo-ollama" "$MEDIA_BASE/models" 2>/dev/null || true
 export OLLAMA_HOST=127.0.0.1:11434
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
 # Explicitly pass both OLLAMA_* so the SimpleModelStore and manifest logic use persistent paths under /media
-OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS="$MEDIA_BASE/models" hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
+OLLAMA_HOST=127.0.0.1:11434 OLLAMA_MODELS="$MEDIA_BASE/hailo-ollama/models" hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
 # Make sure we clean up the background process on exit

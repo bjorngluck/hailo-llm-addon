@@ -1,3 +1,9 @@
+## 2.0.18
+- Unified model storage under /media/hailo_llm/hailo-ollama/models (blobs + manifests) so the binary's HEF files are written to the same persistent tree as the manifests. OLLAMA_MODELS now points there.
+- Added explicit inline styles and stronger CSS for the Models button, sidebar minimise (☰), and delete chat icons to force visible theme colors instead of white.
+- Cleaned up run.sh duplication in persistence setup.
+- Bumped to 2.0.18.
+
 ## 2.0.17
 - config.yaml map updated to "media:rw" + addon_config etc to match Frigate-H10 example for reliable rw access to /media.
 - Switched chat send to stream:false + direct JSON parse for reliable full response (streaming was often empty or not producing assistant content due to proxy/NDJSON issues).
