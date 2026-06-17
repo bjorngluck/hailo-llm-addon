@@ -1,3 +1,11 @@
+## 2.0.16
+- Switch model storage to /media/hailo_llm (following Frigate-H10 addon pattern).
+  - OLLAMA_MODELS and hailo-ollama (manifests + HEF files) now live under /media/hailo_llm/models and /media/hailo_llm/hailo-ollama
+  - On HAOS host these are directly at /media/hailo_llm/ (much easier to inspect via Samba/Filebrowser than /mnt/data)
+  - Keeps /data/chats for chat history
+  - Updated run.sh paths, symlinks, exports, logging, and server.py reporting
+- Bumped to 2.0.16.
+
 ## 2.0.15
 - Persistence: stronger setup in run.sh — always merge (no-clobber) latest package manifests, additional persistent symlinks for common HEF/cache locations (/root/.cache/hailo*, /var/lib/hailo-ollama), explicit OLLAMA_MODELS on the serve command line, chmod a+w like the deb postinst, expanded startup diagnostics (now logs cache + var/lib too). This should ensure both manifests and the actual model (HEF by hash) files survive restarts when written during /api/pull.
 - Buttons: root cause was missing CSS rules for .bg-indigo-600 / .bg-rose-600 (and active/hover variants) — only hovers and zinc bgs were defined, so primary buttons had no (or default white) background making white icons invisible or "still white". Added full base background rules + reinforced in the primary selector.

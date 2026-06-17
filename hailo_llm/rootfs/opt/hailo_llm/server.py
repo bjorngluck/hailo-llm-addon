@@ -5,7 +5,7 @@ Hailo LLM Add-on - Web UI + API Proxy (Flask)
 - Serves a modern, OpenWebUI-inspired interactive chat experience at the HA ingress (port 8000).
 - Provides a thin transparent proxy so the full Ollama-compatible surface (/api/*, /hailo/*)
   remains available on the same port for external clients (HA conversation, curl, etc.).
-- Persists downloaded models via the launch script (OLLAMA_MODELS=/data/models + symlinks).
+- Persists downloaded models via the launch script (OLLAMA_MODELS=/media/hailo_llm/models + symlinks). Models live under host /media/hailo_llm (following community Hailo addon patterns like Frigate-H10).
 - Persists chat history server-side under /data/chats (survives reboots).
 - Honors auto_download_model on startup.
 """
@@ -24,8 +24,9 @@ import requests
 # -----------------------------------------------------------------------------
 BACKEND = os.environ.get("HAILO_BACKEND", "http://127.0.0.1:11434")
 DATA_DIR = "/data"
-MODELS_DIR = os.path.join(DATA_DIR, "models")
 CHATS_DIR = os.path.join(DATA_DIR, "chats")
+# Large model files (HEF) are stored under /media for accessibility (see Frigate-Hailo reference)
+MODELS_DIR = "/media/hailo_llm/models"
 OPTIONS_PATH = os.path.join(DATA_DIR, "options.json")
 
 os.makedirs(CHATS_DIR, exist_ok=True)
@@ -1294,7 +1295,7 @@ def health():
         "hailo_device": device,
         "backend_reachable": backend_ok,
         "backend": BACKEND,
-        "models_persisted_at": MODELS_DIR,
+        "models_persisted_at": MODELS_DIR,  # now under /media/hailo_llm on host
         "chats_persisted_at": CHATS_DIR,
     })
 
