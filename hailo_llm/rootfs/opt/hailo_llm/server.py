@@ -408,6 +408,13 @@ INDEX_HTML = r"""<!doctype html>
     #chat-messages .text-center {
       color: #71717a;
     }
+    #message-input, input, textarea, button, select {
+      color: #e4e4e7;
+    }
+    #message-input {
+      background-color: #27272a;
+      border-color: #3f3f46;
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">

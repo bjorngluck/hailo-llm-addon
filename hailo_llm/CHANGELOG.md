@@ -1,3 +1,8 @@
+## 2.0.12
+- Fixed manifest directory error by removing destructive `rm -rf /usr/share/hailo-ollama/models` (which was deleting the package's installed manifests in models/manifests/). Now preserve the package dir and only symlink user model storage locations.
+- Ensured all text (including message textarea, buttons, etc.) is light color (#e4e4e7) via explicit CSS rules for inputs, textareas, buttons.
+- Bumped version to 2.0.12.
+
 ## 2.0.11
 - Fixed hailo-ollama startup crash: "Failed to find manifest directory: hailo-ollama directory not found" (followed by abort/core dump). Added explicit `mkdir -p` for required manifest directories (`/usr/share/hailo-ollama`, `/usr/share/hailo-ollama/manifests`, `/root/.hailo-ollama`, `/opt/hailo-ollama`, etc.) before symlinks and binary start. This ensures the package's manifest dir is present at runtime.
 - Cleaned up model persistence setup in run.sh (stronger dir creation, cleanup of stale locations, reinforced OLLAMA_MODELS and symlinks).

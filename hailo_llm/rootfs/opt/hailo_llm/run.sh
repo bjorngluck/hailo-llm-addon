@@ -23,18 +23,15 @@ echo "=========================================="
 mkdir -p /data/models /data/chats
 chmod 755 /data/models 2>/dev/null || true
 
-# Make sure no stale non-persistent models dirs interfere
+# Make sure no stale non-persistent models dirs interfere (only user model storage locations)
 rm -rf /root/.ollama/models 2>/dev/null || true
-rm -rf /usr/share/hailo-ollama/models 2>/dev/null || true
 
 # Ensure the hailo-ollama manifest directories exist (binary requires "hailo-ollama directory" for manifests from the package)
+# Do NOT rm or symlink over /usr/share/hailo-ollama/models because the package installs manifests there (in models/manifests/)
 mkdir -p /usr/share/hailo-ollama /usr/share/hailo-ollama/manifests /usr/share/hailo-models /root/.ollama /root/hailo-ollama /root/.hailo-ollama /opt/hailo-ollama
 
-# Defensive symlinks so the hailo-ollama binary finds models no matter which path it probes
-# (community reports show it has used ~/.ollama, /usr/share/hailo-ollama etc.)
+# Defensive symlinks for user model storage (do not touch package manifest dir)
 ln -sfn /data/models /root/.ollama/models
-ln -sfn /data/models /usr/share/hailo-ollama/models 2>/dev/null || true
-ln -sfn /data/models /usr/share/hailo-models 2>/dev/null || true
 
 # Also ensure OLLAMA_MODELS is set for the child processes
 export OLLAMA_MODELS=/data/models
