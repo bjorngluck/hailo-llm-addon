@@ -939,9 +939,9 @@ INDEX_HTML = r"""<!doctype html>
 </html>
 """
 
-@app.route("/")
-def index():
-    return Response(INDEX_HTML, mimetype="text/html")
+# Note: We intentionally do NOT define a root route here.
+# The catch-all UI server is registered *after* all API routes (see below)
+# so that /api/* and /hailo/* are always handled by the proxy first.
 
 # -----------------------------------------------------------------------------
 # Chat persistence API (used by the UI)
@@ -1016,6 +1016,32 @@ def health():
 @app.route("/api/ui/recommended-models")
 def recommended_models():
     return jsonify({"recommended": get_recommended_models()})
+
+# -----------------------------------------------------------------------------
+# UI catch-all (must be registered AFTER all /api and /hailo routes)
+#
+# This ensures that the beautiful web UI is served for the root (and any
+# other non-API path) that the HA ingress might use. This pattern is
+# important for reliable rendering inside Home Assistant panels.
+# Without it, some ingress path variations can cause the browser to
+# download the response as "downloadfile.bin" instead of rendering HTML.
+# -----------------------------------------------------------------------------
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_ui(path):
+    # Only serve the UI for paths that are not API routes.
+    # (The specific and generic /api/* and /hailo/* routes above will have
+    # already matched if this was an API request.)
+    if path.startswith("api/") or path.startswith("hailo/"):
+        return "Not Found", 404
+
+    print(f"[hailo-llm] Serving UI for path='/{path}' (this should appear in addon logs)")
+    resp = Response(INDEX_HTML, mimetype="text/html; charset=utf-8")
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    # Helpful for iframe/panel embedding in HA
+    resp.headers["X-Frame-Options"] = "SAMEORIGIN"
+    return resp
 
 # -----------------------------------------------------------------------------
 # Startup

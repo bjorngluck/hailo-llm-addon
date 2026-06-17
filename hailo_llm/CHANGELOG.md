@@ -1,3 +1,9 @@
+## 2.0.1
+- **Bugfix**: Web UI now renders correctly when accessed via Home Assistant ingress. Previously the browser would download the response as "downloadfile-bin" instead of showing the chat interface. Fixed by registering a robust catch-all route (after all API proxy routes) so the single-page UI is served for the root and any non-API paths that ingress may forward.
+- Documentation fixes: Corrected Mermaid diagram syntax in `docs/architecture.md` so the system diagram, startup sequence, and model download flow now render properly on GitHub.
+- Added logging in `serve_ui` to help debug ingress path handling.
+- Bumped version to 2.0.1.
+
 ## 2.0.0
 - **Major feature release**: Persistent model storage on HAOS (/data) — models now survive service restarts and HAOS reboots.
 - New built-in modern interactive chat UI (OpenWebUI-inspired) served directly at the ingress:

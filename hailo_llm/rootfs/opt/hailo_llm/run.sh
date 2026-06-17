@@ -85,4 +85,5 @@ if [ "$READY" -ne 1 ]; then
 fi
 
 echo "Starting web UI + API proxy on port 8000 (for ingress + Ollama clients)..."
+echo "The UI should be served for all non-API paths (important for HA ingress)."
 exec python3 /opt/hailo_llm/server.py
