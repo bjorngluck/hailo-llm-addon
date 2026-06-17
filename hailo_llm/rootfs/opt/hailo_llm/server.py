@@ -246,6 +246,12 @@ INDEX_HTML = r"""<!doctype html>
     .model-chip:hover { transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
     .hailo-glow { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
     .log-line { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.75rem; }
+    #model-select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: none !important;
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
@@ -316,9 +322,7 @@ INDEX_HTML = r"""<!doctype html>
             <i class="fa-solid fa-bolt text-emerald-400"></i>
             <span>Hailo accelerated</span>
           </div>
-          <button onclick="showSettings()" class="px-3 py-1.5 rounded-2xl hover:bg-zinc-800 text-zinc-400">
-            <i class="fa-solid fa-cog"></i>
-          </button>
+          <!-- Settings integrated into Models panel -->
         </div>
       </div>
 
@@ -395,30 +399,27 @@ INDEX_HTML = r"""<!doctype html>
         </div>
         <div id="pull-progress" class="mt-3 hidden text-xs log-line bg-zinc-900 border border-zinc-800 rounded-2xl p-2 max-h-24 overflow-auto"></div>
       </div>
-    </div>
-  </div>
 
-  <!-- Settings -->
-  <div id="settings-modal" onclick="if (event.target.id === 'settings-modal') closeSettings()" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-    <div onclick="event.stopImmediatePropagation()" class="modern-card w-full max-w-sm rounded-3xl p-5 m-4">
-      <div class="font-semibold mb-4">Settings</div>
-      <div class="space-y-4 text-sm">
-        <div>
-          <label class="block text-xs text-zinc-400 mb-1">Keep Alive</label>
-          <input id="setting-keep-alive" type="text" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-3 py-2 text-sm" value="300m"/>
-          <div class="text-[10px] text-zinc-500 mt-1">e.g. 300m, 1h, -1 (forever)</div>
-        </div>
-        <div class="flex items-center justify-between">
+      <!-- Settings section (integrated into Models panel for better panel layout) -->
+      <div class="mt-4 pt-4 border-t border-zinc-700">
+        <div class="uppercase text-xs tracking-wider text-zinc-500 mb-2 px-1">Settings</div>
+        <div class="space-y-3 text-sm">
           <div>
-            <div class="text-sm">Auto-download default model</div>
-            <div class="text-xs text-zinc-500">On first start if no models present</div>
+            <label class="block text-xs text-zinc-400 mb-1">Keep Alive</label>
+            <input id="setting-keep-alive" type="text" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-3 py-1.5 text-sm" value="300m"/>
+            <div class="text-[10px] text-zinc-500 mt-0.5">e.g. 300m, 1h, -1 (forever)</div>
           </div>
-          <input type="checkbox" id="setting-auto-download" class="accent-indigo-500 w-4 h-4"/>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm">Auto-download default model</div>
+              <div class="text-xs text-zinc-500">On first start if no models present</div>
+            </div>
+            <input type="checkbox" id="setting-auto-download" class="accent-indigo-500 w-4 h-4"/>
+          </div>
         </div>
-      </div>
-      <div class="mt-6 flex justify-end gap-2">
-        <button onclick="closeSettings()" class="px-4 py-1.5 rounded-2xl text-sm hover:bg-zinc-800">Close</button>
-        <button onclick="saveSettings()" class="px-4 py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-sm">Save</button>
+        <div class="mt-3 flex justify-end">
+          <button onclick="saveSettings(); closeModelManager();" class="px-3 py-1 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-xs">Save Settings</button>
+        </div>
       </div>
     </div>
   </div>
@@ -449,8 +450,9 @@ INDEX_HTML = r"""<!doctype html>
         if (models.length === 0) {
           const opt = document.createElement('option');
           opt.value = '';
-          opt.textContent = '— no models —';
+          opt.textContent = '— pull a model first —';
           sel.appendChild(opt);
+          sel.disabled = true;
           return;
         }
         models.forEach(name => {
@@ -863,26 +865,12 @@ INDEX_HTML = r"""<!doctype html>
       await loadModelsIntoSelect();
     }
 
-    // ---------------- Settings (very light) ----------------
-    function showSettings() {
-      $('#settings-modal').classList.remove('hidden');
-      $('#settings-modal').classList.add('flex');
-      // naive: we don't persist keep_alive from here yet (run.sh reads options.json on start)
-      // but we can at least show current values
-      fetch(OPTIONS_PATH).then(r => r.ok ? r.json() : {}).then(opts => {
-        if (opts.keep_alive) $('#setting-keep-alive').value = opts.keep_alive;
-        $('#setting-auto-download').checked = !!opts.auto_download_model;
-      }).catch(()=>{});
-    }
-    function closeSettings() {
-      $('#settings-modal').classList.remove('flex');
-      $('#settings-modal').classList.add('hidden');
-    }
+    // Settings are now inside the Models panel.
+    // The save just alerts (full persistence is via HA addon config + restart).
     async function saveSettings() {
-      // For a real implementation we would write back to /data/options.json
       // For now we just close (user can change via HA UI options)
       alert('Settings are read at addon start from the Home Assistant add-on configuration.\nChange them in the add-on UI and restart the addon.');
-      closeSettings();
+      // The panel is closed via the button in the HTML
     }
 
     // ---------------- Boot ----------------
@@ -900,7 +888,7 @@ INDEX_HTML = r"""<!doctype html>
           el.innerHTML = `<span class="text-amber-400">No Hailo device</span>`;
         }
       } catch(e) {
-        $('#device-text').textContent = 'Health check failed';
+        $('#device-text').innerHTML = '<span class="text-amber-400">Backend starting (check logs if stuck)</span>';
       }
 
       // Initial model load
