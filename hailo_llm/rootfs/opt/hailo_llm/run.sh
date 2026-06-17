@@ -21,13 +21,21 @@ echo "=========================================="
 
 # Ensure persistent storage for models + chat history (HAOS /data is durable across reboots)
 mkdir -p /data/models /data/chats
+chmod 755 /data/models 2>/dev/null || true
+
+# Make sure no stale non-persistent models dirs interfere
+rm -rf /root/.ollama/models 2>/dev/null || true
+rm -rf /usr/share/hailo-ollama/models 2>/dev/null || true
 
 # Defensive symlinks so the hailo-ollama binary finds models no matter which path it probes
 # (community reports show it has used ~/.ollama, /usr/share/hailo-ollama etc.)
 mkdir -p /root/.ollama
-ln -sfn /data/models /root/.ollama/models 2>/dev/null || true
+ln -sfn /data/models /root/.ollama/models
 ln -sfn /data/models /usr/share/hailo-ollama/models 2>/dev/null || true
 ln -sfn /data/models /usr/share/hailo-models 2>/dev/null || true
+
+# Also ensure OLLAMA_MODELS is set for the child processes
+export OLLAMA_MODELS=/data/models
 
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
@@ -63,7 +71,7 @@ fi
 # Note: hailo-ollama 5.3+ prefers OLLAMA_HOST env var for the listen address.
 export OLLAMA_HOST=127.0.0.1:11434
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
-hailo-ollama serve > /tmp/hailo-ollama.log 2>&1 &
+OLLAMA_HOST=127.0.0.1:11434 hailo-ollama serve --host 127.0.0.1 --port 11434 > /tmp/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
 # Make sure we clean up the background process on exit

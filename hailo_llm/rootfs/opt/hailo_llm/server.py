@@ -340,8 +340,8 @@ INDEX_HTML = r"""<!doctype html>
     .leading-tight { line-height: 1.25; }
     .tracking-tighter { letter-spacing: -0.05em; }
     .chat-container { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
-    .message-bubble { max-width: 78%; padding: 0.75rem 1rem; border-radius: 1.25rem; font-size: 0.875rem; white-space: pre-wrap; }
-    .assistant-bubble { background: #1f2937; border: 1px solid #374151; }
+    .message-bubble { max-width: 78%; padding: 0.75rem 1rem; border-radius: 1.25rem; font-size: 0.875rem; white-space: pre-wrap; color: #e4e4e7; }
+    .assistant-bubble { background: #1f2937; border: 1px solid #374151; color: #e4e4e7; }
     .user-bubble { background: #6366f1; color: white; }
     .streaming::after { content: '▍'; animation: blink 1s step-end infinite; }
     @keyframes blink { 50% { opacity: 0; } }
@@ -376,18 +376,51 @@ INDEX_HTML = r"""<!doctype html>
     .fa-times:before { content: "×"; }
     .fa-chevron-down:before { content: "▼"; }
     .fa-robot:before { content: "🤖"; }
+    #sidebar.collapsed {
+      width: 3rem !important;
+      overflow: hidden;
+    }
+    #sidebar.collapsed .sidebar-text,
+    #sidebar.collapsed #chat-list {
+      display: none !important;
+    }
+    #sidebar.collapsed button[title="Toggle sidebar"] {
+      width: 100%;
+      text-align: center;
+    }
+    #sidebar button {
+      color: #e4e4e7;
+    }
+    #main-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0%;
+      min-width: 0;
+      height: 100%;
+    }
+    #chat-messages {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #09090b;
+      color: #e4e4e7;
+    }
+    #chat-messages .text-center {
+      color: #71717a;
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
   <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
-    <div class="w-72 border-r border-zinc-800 bg-zinc-900 flex flex-col">
+    <div id="sidebar" class="w-72 border-r border-zinc-800 bg-zinc-900 flex flex-col">
       <!-- Header -->
       <div class="p-4 border-b border-zinc-800 flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="text-zinc-400 hover:text-white p-1" title="Toggle sidebar">☰</button>
         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
           <i class="fa-solid fa-microchip text-lg"></i>
         </div>
-        <div>
+        <div class="sidebar-text">
           <div class="font-semibold font-display text-xl tracking-tighter">Hailo LLM</div>
           <div class="text-[10px] text-zinc-500 -mt-0.5">Hailo-10H + Model Zoo</div>
         </div>
@@ -420,7 +453,7 @@ INDEX_HTML = r"""<!doctype html>
     </div>
 
     <!-- Main Area -->
-    <div class="flex-1 flex flex-col min-w-0">
+    <div id="main-content" class="flex-1 flex flex-col min-w-0">
       <!-- Top bar -->
       <div class="h-14 border-b border-zinc-800 px-4 flex items-center justify-between bg-zinc-900/70 backdrop-blur">
         <div class="flex items-center gap-3">
@@ -561,6 +594,11 @@ INDEX_HTML = r"""<!doctype html>
 
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => document.querySelectorAll(sel);
+
+    function toggleSidebar() {
+      const sb = $('#sidebar');
+      if (sb) sb.classList.toggle('collapsed');
+    }
 
     function fmtTime(ts) {
       if (!ts) return '';
@@ -922,7 +960,26 @@ INDEX_HTML = r"""<!doctype html>
     function renderCuratedModels() {
       const container = $('#curated-models');
       container.innerHTML = '';
-      (window.CURATED || []).forEach(name => {
+      let models = window.CURATED || [];
+      // Try to query available models from the binary if supported
+      // (e.g. /hailo/v1/list may return list of pullable models for the zoo)
+      fetch(INGRESS_BASE + 'hailo/v1/list')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            if (Array.isArray(data)) models = data;
+            else if (data.models && Array.isArray(data.models)) models = data.models;
+          }
+          populateCurated(container, models);
+        })
+        .catch(() => {
+          populateCurated(container, models);
+        });
+    }
+
+    function populateCurated(container, models) {
+      container.innerHTML = '';
+      models.forEach(name => {
         const btn = document.createElement('button');
         btn.className = 'model-chip text-xs px-3 py-1 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700';
         btn.textContent = name;
@@ -936,7 +993,12 @@ INDEX_HTML = r"""<!doctype html>
       pullInProgress = true;
       const progress = $('#pull-progress');
       progress.classList.remove('hidden');
-      progress.innerHTML = `<div class="text-emerald-400">Pulling ${name}...</div>`;
+      progress.innerHTML = `
+        <div id="pull-status" class="text-emerald-400">Pulling ${name}...</div>
+        <div id="pull-bar-container" style="height:6px; background:#27272a; border-radius:3px; margin-top:6px; overflow:hidden;">
+          <div id="pull-bar" style="height:100%; width:0%; background:#4ade80; transition:width 0.2s;"></div>
+        </div>
+      `;
 
       try {
         const res = await fetch(INGRESS_BASE + 'api/pull', {
@@ -956,16 +1018,24 @@ INDEX_HTML = r"""<!doctype html>
             if (!l.trim()) continue;
             try {
               const obj = JSON.parse(l);
+              const statusEl = document.getElementById('pull-status');
+              const barEl = document.getElementById('pull-bar');
               if (obj.status) {
-                const line = document.createElement('div');
-                line.textContent = obj.status + (obj.completed ? ` (${Math.round(obj.completed/obj.total*100)}%)` : '');
-                progress.appendChild(line);
-                progress.scrollTop = progress.scrollHeight;
+                let txt = obj.status;
+                if (obj.completed && obj.total) {
+                  const pct = Math.round(100 * obj.completed / obj.total);
+                  txt += ` (${pct}%)`;
+                  if (barEl) barEl.style.width = pct + '%';
+                }
+                if (statusEl) statusEl.textContent = txt;
               }
             } catch(e){}
           }
         }
-        progress.innerHTML += `<div class="text-emerald-400 mt-1">✓ Done</div>`;
+        const statusEl = document.getElementById('pull-status');
+        if (statusEl) statusEl.textContent = '✓ Done';
+        const barEl = document.getElementById('pull-bar');
+        if (barEl) barEl.style.width = '100%';
         await refreshInstalledModels();
         await loadModelsIntoSelect();
       } catch (e) {
@@ -1054,6 +1124,12 @@ INDEX_HTML = r"""<!doctype html>
 
       // Auto-load models panel on first load (user request)
       openModelManager();
+
+      // Collapse sidebar on small screens / mobile
+      if (window.innerWidth < 768) {
+        const sb = $('#sidebar');
+        if (sb) sb.classList.add('collapsed');
+      }
     }
 
     // Make curated list available to the embedded script

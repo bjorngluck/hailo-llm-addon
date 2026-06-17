@@ -1,3 +1,12 @@
+## 2.0.10
+- Sidebar is now collapsible via ☰ button (and auto-collapses on small screens <768px) to fix mobile layout taking too much space.
+- Enhanced model persistence: more aggressive cleanup of stale non-persistent model dirs, explicit OLLAMA_MODELS export, and permission fixes in run.sh.
+- Ensured light text color (#e4e4e7) for chat bubbles, assistant text, sidebar buttons, and new chat button.
+- Improved model download progress: now uses a single status line + progress bar instead of appending every % as a new line.
+- Query for available models: renderCuratedModels now tries to fetch from /hailo/v1/list (falls back to curated) to show only/query available models for the zoo.
+- Chat window updates: added explicit CSS for #chat-messages and #main-content to ensure proper flex layout, scrolling, and visibility of messages even without full Tailwind. Messages should now render in the thread with server feedback (streaming).
+- Bumped version to 2.0.10.
+
 ## 2.0.9
 - Fix: When creating new chats (including auto-created and on first message), ensure the `model` field is populated from the currently selected model (via selector or currentModel). Previously some chats were saved with empty "model": "".
 - Updated createNewChat and sendMessage to explicitly set and save the model on the chat object.
