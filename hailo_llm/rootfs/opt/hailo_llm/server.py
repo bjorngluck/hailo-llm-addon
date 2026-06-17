@@ -717,7 +717,8 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     async function createNewChat(preferredModel) {
-      const model = preferredModel || currentModel || '';
+      const sel = $('#model-select');
+      const model = preferredModel || sel.value || currentModel || '';
       const chat = await (await fetch(INGRESS_BASE + 'api/chats', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -725,7 +726,7 @@ INDEX_HTML = r"""<!doctype html>
       })).json();
       currentChatId = chat.id;
       currentModel = chat.model || model;
-      $('#model-select').value = currentModel;
+      sel.value = currentModel;
       $('#composer-model').textContent = currentModel;
       renderMessages(chat);
       await refreshChatList();
@@ -759,6 +760,9 @@ INDEX_HTML = r"""<!doctype html>
 
       // append user message
       chat.messages.push({ role: 'user', content: text, ts: Math.floor(Date.now()/1000) });
+      if (!chat.model) {
+        chat.model = currentModel;
+      }
       await saveChatRemote(chat);
       renderMessages(chat);
       input.value = '';

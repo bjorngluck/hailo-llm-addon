@@ -1,3 +1,8 @@
+## 2.0.9
+- Fix: When creating new chats (including auto-created and on first message), ensure the `model` field is populated from the currently selected model (via selector or currentModel). Previously some chats were saved with empty "model": "".
+- Updated createNewChat and sendMessage to explicitly set and save the model on the chat object.
+- Bumped version to 2.0.9.
+
 ## 2.0.8
 - Made modal show/hide use direct style.display = 'flex'/'none' instead of relying only on classList + CSS. This makes the Models panel (and any modals) work reliably even if some Tailwind classes are not applied.
 - Updated initial HTML for model-modal to have style="display: none;" explicitly.
