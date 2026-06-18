@@ -867,12 +867,21 @@ INDEX_HTML = r"""<!doctype html>
       const text = input.value.trim();
       if (!text || generationInFlight) return;
 
+      // Clear input immediately so the typed text never "stays" on submit.
+      // Do this before any awaits that might early-return (e.g. fetchChat failing).
+      input.value = '';
+
       if (!currentChatId) {
         await createNewChat();
       }
 
       let chat = await fetchChat(currentChatId);
-      if (!chat) return;
+      if (!chat) {
+        // Chat persistence lookup failed (possible transient ingress / backend issue).
+        // The user message was not sent, but at least the input is cleared.
+        console.warn('[send] fetchChat failed after submit - user message not recorded this time');
+        return;
+      }
 
       // append user message
       chat.messages.push({ role: 'user', content: text, ts: Math.floor(Date.now()/1000) });
@@ -881,7 +890,6 @@ INDEX_HTML = r"""<!doctype html>
       }
       await saveChatRemote(chat);
       renderMessages(chat);
-      input.value = '';
 
       // call backend (proxied)
       generationInFlight = true;

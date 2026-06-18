@@ -34,3 +34,24 @@
 - First model pull can take a while (depends on model size and your internet connection).
 - The curated models in the UI are chosen from the official Hailo GenAI Model Zoo for best compatibility/performance on the Hailo-10H.
 - You can still pull any model the backend supports by typing the exact tag.
+
+## Updating the add-on
+
+After you `git pull` (or pull new commits) in this repository:
+
+1. In Home Assistant, go to **Settings → Add-ons → Hailo LLM**.
+2. Click the **⋯** (three dots) in the top right of the add-on page.
+3. Choose **Rebuild**.
+
+**Rebuild** is the most reliable way to pick up source changes when using a Git-based custom repository.
+
+The "Update" button in the Add-on Store can sometimes be greyed out because:
+- HA has cached the previous repository metadata.
+- For local/Git add-ons the store "Update" detection is not always immediate.
+- Version comparison uses the `version` field in `config.yaml`.
+
+To force the store to see the new version:
+- Add-ons → Add-on Store → ⋮ → Repositories → click the refresh icon next to your repository.
+- Or remove the repository and re-add it.
+
+We also ship a `build.yaml` (matching patterns used by other Hailo-10H add-ons) to improve build compatibility.

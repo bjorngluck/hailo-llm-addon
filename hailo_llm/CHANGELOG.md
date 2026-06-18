@@ -1,3 +1,9 @@
+## 2.0.21
+- Fix: typed message no longer stays in the input box after pressing submit. Input is now cleared immediately after the initial guards (before any `fetchChat` / `createNewChat` that could early-return).
+- Added `build.yaml` (following patterns from other Hailo-10H addons) to help with builds and version detection in the HA addon store.
+- Upgrade button greyed out: For custom Git-based repositories, after pulling a new version the reliable way to get the update is usually the **Rebuild** action (three-dots menu on the installed addon) rather than the store "Update" button. Added instructions.
+- Bumped to 2.0.21.
+
 ## 2.0.20
 - Chat fix: messages sent from UI now receive and display assistant responses.
   - Switched sendMessage to use `stream: true` + NDJSON body reader (same pattern as the working /api/pull handler) to accumulate incremental tokens reliably.
