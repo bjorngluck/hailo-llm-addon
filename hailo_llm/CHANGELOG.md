@@ -1,3 +1,11 @@
+## 2.0.22
+- Chat: major robustness and visibility improvements
+  - Deep tracing added (browser console `[send]`, `[render]`, chunk logs + server `[chats]` logs in addon logs) so submit/response flow can be followed exactly.
+  - History sidebar now shows useful titles (derived from first user message) + message counts instead of always "New chat".
+  - Messages render optimistically: user message and "Thinking..." appear immediately (persistence no longer blocks display).
+  - `/api/chat` switched to `stream: true` + NDJSON reader (matching working pull path) with full JSON fallback for reliable responses through the Flask proxy and HA ingress.
+- Bumped to 2.0.22.
+
 ## 2.0.21
 - Chat fixes: 
   - Input now always clears on submit.
@@ -5,8 +13,6 @@
   - Switched /api/chat call to `stream: false` + `res.json()` for reliable full response delivery (avoids NDJSON streaming buffering issues through proxy + ingress).
   - Assistant response (or clear error) should now appear in the window.
 - Upgrade detection improved via repository.yaml + build.yaml + Rebuild instructions.
-
-## Tracing + history + response robustness (current on branch)
 - Added deep tracing:
   - Server: `[chats]` logs on every create/load/save/list (visible in addon logs).
   - Client: verbose `[send]`, `[createNewChat]`, `[fetchChat]`, `[save...]`, `[renderMessages]`, chunk logs in browser DevTools console.
