@@ -1,3 +1,7 @@
+## 2.0.23
+- Bump to force HA store to detect new version after merge to main. Upgrade button should now offer the new release.
+- All previous fixes from 2.0.22 included (chat tracing, history titles, optimistic renders, robust /api/chat handling).
+
 ## 2.0.22
 - Chat: major robustness and visibility improvements
   - Deep tracing added (browser console `[send]`, `[render]`, chunk logs + server `[chats]` logs in addon logs) so submit/response flow can be followed exactly.

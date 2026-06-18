@@ -50,13 +50,17 @@ The "Update" button in the Add-on Store can sometimes be greyed out because:
 - For local/Git add-ons the store "Update" detection is not always immediate.
 - Version comparison uses the `version` field in `config.yaml`.
 
-To force the store to see the new version:
-- Add-ons → Add-on Store → ⋮ → Repositories → click the refresh icon next to your repository.
-- Or remove the repository and re-add it.
+To force the store to see the new version (when the upgrade button only shows the current/old version):
+1. Add-ons → Add-on Store → ⋮ (top right) → Repositories.
+2. Click the refresh icon (circular arrows) next to your "Björn's Hailo Add-ons" repository.
+3. If still not showing, remove the repository completely, then re-add it using the exact URL: `https://github.com/bjorngluck/hailo-llm-addon`
+4. Wait 30 seconds, then hard-refresh your browser (Ctrl+Shift+R).
+5. On the installed Hailo LLM addon page, use the **⋯** menu → **Rebuild** (this often works even when the store "Update" button is grey or only shows the current version).
+6. As a last resort: restart the Supervisor (`ha supervisor restart` in SSH or Terminal addon) or restart Home Assistant entirely.
 
 **Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
 
-- Your latest version bump (e.g. 2.0.21) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- Your latest version bump (e.g. 2.0.23) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
