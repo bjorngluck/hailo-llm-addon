@@ -55,3 +55,5 @@ To force the store to see the new version:
 - Or remove the repository and re-add it.
 
 We also ship a `build.yaml` (matching patterns used by other Hailo-10H add-ons) to improve build compatibility.
+
+We provide both `repository.json` and `repository.yaml` for maximum compatibility with the Home Assistant addon store.
