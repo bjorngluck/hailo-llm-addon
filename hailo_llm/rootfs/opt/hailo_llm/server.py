@@ -788,7 +788,11 @@ INDEX_HTML = r"""<!doctype html>
           content = content.replace(/```([\s\S]*?)```/g, '<pre class="bg-zinc-950 p-2 rounded-xl my-1 overflow-auto text-xs">$1</pre>');
           content = content.replace(/\n/g, '<br>');
         }
-        inner.innerHTML = content || '<span class="opacity-50">(empty)</span>';
+        if (msg.role === 'assistant' && !content && generationInFlight && idx === chat.messages.length - 1) {
+          inner.innerHTML = '<span class="opacity-50">Thinking...</span>';
+        } else {
+          inner.innerHTML = content || '<span class="opacity-50">(empty)</span>';
+        }
 
         // Live cursor while generating the last assistant message
         if (msg.role === 'assistant' && generationInFlight && idx === chat.messages.length - 1) {
