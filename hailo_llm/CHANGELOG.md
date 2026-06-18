@@ -6,6 +6,16 @@
   - Assistant response (or clear error) should now appear in the window.
 - Upgrade detection improved via repository.yaml + build.yaml + Rebuild instructions.
 
+## Tracing + history + response robustness (current on branch)
+- Added deep tracing:
+  - Server: `[chats]` logs on every create/load/save/list (visible in addon logs).
+  - Client: verbose `[send]`, `[createNewChat]`, `[fetchChat]`, `[save...]`, `[renderMessages]`, chunk logs in browser DevTools console.
+- History sidebar ("history window"): now derives a title from the submitted user message (first ~48 chars). List items also show message count. Submitting text now visibly creates/updates an entry in the chat list.
+- Optimistic UI updates: user message bubble + assistant stub ("Thinking...") are rendered locally immediately. Saves to /api/chats and refreshChatList happen async and never block display or abort generation.
+- /api/chat now sends `stream: true` + uses NDJSON line reader (exact pattern proven for /api/pull) + falls back to full res.json(). Handles whatever hailo-ollama + proxy returns. Live token accumulation + re-render.
+- saveChatRemote and refreshChatList are now defensive (no uncaught errors can break send path).
+- Research confirmed: hailo-ollama returns Ollama-style NDJSON incremental `{"message":{"content":"..."}}` (and final done:true). Proxy forwards; ingress can affect full non-stream bodies — reader is more reliable.
+
 - Fix: typed message no longer stays in the input box after pressing submit. Input is now cleared immediately after the initial guards (before any `fetchChat` / `createNewChat` that could early-return).
 - Added `build.yaml` (following patterns from other Hailo-10H addons) to help with builds and version detection in the HA addon store.
 - Upgrade button greyed out: For custom Git-based repositories, after pulling a new version the reliable way to get the update is usually the **Rebuild** action (three-dots menu on the installed addon) rather than the store "Update" button. Added instructions.

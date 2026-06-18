@@ -73,16 +73,21 @@ def list_chats():
         except Exception:
             continue
     chats.sort(key=lambda c: c.get("updated", 0), reverse=True)
+    print(f"[chats] list_chats -> {len(chats)} entries")
     return chats
 
 def load_chat(chat_id: str):
     path = _chat_path(chat_id)
     if not os.path.exists(path):
+        print(f"[chats] load_chat {chat_id} -> not found")
         return None
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
+            data = json.load(f)
+            print(f"[chats] load_chat {chat_id} -> {len(data.get('messages', []))} msgs")
+            return data
+    except Exception as e:
+        print(f"[chats] load_chat {chat_id} error: {e}")
         return None
 
 def save_chat(chat_data: dict):
@@ -91,6 +96,9 @@ def save_chat(chat_data: dict):
     chat_data["updated"] = int(time.time())
     path = _chat_path(chat_id)
     tmp = path + ".tmp"
+    nmsgs = len(chat_data.get("messages", []))
+    title = chat_data.get("title", "")
+    print(f"[chats] save_chat {chat_id} title='{title}' msgs={nmsgs}")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(chat_data, f, indent=2, ensure_ascii=False)
     os.replace(tmp, path)
@@ -114,6 +122,7 @@ def create_new_chat(model: str = "") -> dict:
         "created": now,
         "updated": now,
     }
+    print(f"[chats] create_new_chat id={chat_id} model='{model}'")
     return save_chat(chat)
 
 # -----------------------------------------------------------------------------
@@ -729,43 +738,72 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     async function fetchChat(chatId) {
-      const res = await fetch(INGRESS_BASE + 'api/chats/' + chatId);
-      if (!res.ok) return null;
-      return res.json();
+      try {
+        const res = await fetch(INGRESS_BASE + 'api/chats/' + chatId);
+        if (!res.ok) {
+          console.warn('[fetchChat] not ok', chatId, res.status);
+          return null;
+        }
+        return res.json();
+      } catch (e) {
+        console.warn('[fetchChat] error', chatId, e);
+        return null;
+      }
     }
 
     async function saveChatRemote(chat) {
-      await fetch(INGRESS_BASE + 'api/chats/' + chat.id, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(chat)
-      });
-      await refreshChatList();
+      try {
+        const res = await fetch(INGRESS_BASE + 'api/chats/' + chat.id, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(chat)
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => '');
+          console.error('[saveChatRemote] bad status', res.status, t, 'for', chat.id);
+        }
+      } catch (e) {
+        console.error('[saveChatRemote] network error', e);
+      }
+      // Always attempt list refresh but never throw to callers
+      try {
+        await refreshChatList();
+      } catch (e) {
+        console.warn('[saveChatRemote] refresh failed (non-fatal)', e);
+      }
     }
 
     async function refreshChatList() {
-      const res = await fetch(INGRESS_BASE + 'api/chats');
-      const list = await res.json();
-      const container = $('#chat-list');
-      container.innerHTML = '';
-      list.forEach(c => {
-        const div = document.createElement('div');
-        div.className = `px-3 py-2 rounded-2xl mx-1 mb-1 text-sm cursor-pointer flex justify-between items-center gap-2 hover:bg-zinc-800 ${currentChatId === c.id ? 'bg-zinc-800' : ''}`;
-        div.innerHTML = `
-          <div class="flex-1 min-w-0" onclick="switchToChat('${c.id}')">
-            <div class="truncate font-medium">${c.title || 'Untitled'}</div>
-            <div class="text-xs text-zinc-500 truncate">${c.model || ''}</div>
-          </div>
-          <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs" style="color:#a1a1aa"></i></button>
-        `;
-        container.appendChild(div);
-      });
+      try {
+        const res = await fetch(INGRESS_BASE + 'api/chats');
+        if (!res.ok) throw new Error('list status ' + res.status);
+        const list = await res.json();
+        const container = $('#chat-list');
+        container.innerHTML = '';
+        list.forEach(c => {
+          const div = document.createElement('div');
+          const mc = c.message_count || 0;
+          div.className = `px-3 py-2 rounded-2xl mx-1 mb-1 text-sm cursor-pointer flex justify-between items-center gap-2 hover:bg-zinc-800 ${currentChatId === c.id ? 'bg-zinc-800' : ''}`;
+          div.innerHTML = `
+            <div class="flex-1 min-w-0" onclick="switchToChat('${c.id}')">
+              <div class="truncate font-medium">${c.title || 'Untitled'} <span class="text-[10px] text-zinc-500">(${mc})</span></div>
+              <div class="text-xs text-zinc-500 truncate">${c.model || ''}</div>
+            </div>
+            <button onclick="event.stopImmediatePropagation(); deleteChat('${c.id}');" class="text-zinc-400 hover:text-rose-400 p-1" title="Delete chat"><i class="fa-solid fa-trash text-xs" style="color:#a1a1aa"></i></button>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        console.error('[refreshChatList] failed', e);
+      }
     }
 
     function renderMessages(chat) {
       const area = $('#chat-messages');
       area.innerHTML = '';
       $('#empty-state').classList.add('hidden');
+
+      console.log('[renderMessages] msgs=', chat && chat.messages ? chat.messages.length : 0, 'inflight=', generationInFlight);
 
       if (!chat || !chat.messages || chat.messages.length === 0) {
         const empty = document.createElement('div');
@@ -788,14 +826,16 @@ INDEX_HTML = r"""<!doctype html>
           content = content.replace(/```([\s\S]*?)```/g, '<pre class="bg-zinc-950 p-2 rounded-xl my-1 overflow-auto text-xs">$1</pre>');
           content = content.replace(/\n/g, '<br>');
         }
-        if (msg.role === 'assistant' && !content && generationInFlight && idx === chat.messages.length - 1) {
+
+        const isLastAssistant = (msg.role === 'assistant' && idx === chat.messages.length - 1);
+        if (isLastAssistant && !content && generationInFlight) {
           inner.innerHTML = '<span class="opacity-50">Thinking...</span>';
         } else {
           inner.innerHTML = content || '<span class="opacity-50">(empty)</span>';
         }
 
         // Live cursor while generating the last assistant message
-        if (msg.role === 'assistant' && generationInFlight && idx === chat.messages.length - 1) {
+        if (isLastAssistant && generationInFlight) {
           inner.classList.add('streaming');
         }
 
@@ -823,9 +863,13 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     async function switchToChat(chatId) {
+      console.log('[switchToChat]', chatId);
       currentChatId = chatId;
       const chat = await fetchChat(chatId);
-      if (!chat) return;
+      if (!chat) {
+        console.warn('[switchToChat] fetch failed for', chatId);
+        return;
+      }
       if (chat.model) {
         currentModel = chat.model;
         const sel = $('#model-select');
@@ -839,11 +883,14 @@ INDEX_HTML = r"""<!doctype html>
     async function createNewChat(preferredModel) {
       const sel = $('#model-select');
       const model = preferredModel || sel.value || currentModel || '';
-      const chat = await (await fetch(INGRESS_BASE + 'api/chats', {
+      console.log('[createNewChat] requesting with model', model);
+      const resp = await fetch(INGRESS_BASE + 'api/chats', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ model })
-      })).json();
+      });
+      const chat = await resp.json();
+      console.log('[createNewChat] got', chat);
       currentChatId = chat.id;
       currentModel = chat.model || model;
       sel.value = currentModel;
@@ -887,13 +934,23 @@ INDEX_HTML = r"""<!doctype html>
         chat = { id: currentChatId, messages: [], model: currentModel || '' };
       }
 
-      // append user message
-      chat.messages.push({ role: 'user', content: text, ts: Math.floor(Date.now()/1000) });
+      console.log('[send] chat before user push, msgs=', chat.messages.length, 'id=', currentChatId);
+
+      // append user message - OPTIMISTIC: render immediately, persist async
+      const userMsg = { role: 'user', content: text, ts: Math.floor(Date.now()/1000) };
+      chat.messages.push(userMsg);
       if (!chat.model) {
         chat.model = currentModel;
       }
-      await saveChatRemote(chat);
-      renderMessages(chat);
+
+      // Derive a useful title from the first real user message
+      if (!chat.title || chat.title === 'New chat' || chat.title === 'Untitled') {
+        const t = text.trim();
+        chat.title = t.length > 48 ? t.slice(0, 48) + '...' : t;
+      }
+
+      renderMessages(chat);                 // user sees their message RIGHT NOW
+      saveChatRemote(chat);                 // fire-and-forget for sidebar/history
 
       // call backend (proxied)
       generationInFlight = true;
@@ -914,27 +971,22 @@ INDEX_HTML = r"""<!doctype html>
         return '';
       }
 
-      // ALWAYS create assistant stub immediately and persist it.
-      // This guarantees that after sending a user message, the chat will have an assistant turn
-      // (with content or an error note) even if streaming fails completely.
+      // ALWAYS create assistant stub immediately
       let assistantMessage = { role: 'assistant', content: '', ts: Math.floor(Date.now()/1000) };
       chat.messages.push(assistantMessage);
-      await saveChatRemote(chat);
-      renderMessages(chat);
+      renderMessages(chat);                 // show "Thinking..." immediately
+      saveChatRemote(chat);
 
-      console.log('[send] starting /api/chat for model', currentModel || chat.model);
+      console.log('[send] starting /api/chat for model', currentModel || chat.model, 'with', chat.messages.length - 1, 'messages to backend');
 
       try {
-        // Use stream:false + res.json() for a single full response object.
-        // This avoids potential buffering issues with NDJSON streaming through the
-        // Flask proxy + HA ingress. For small models the full response is fast anyway.
         const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel || chat.model,
             messages: chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })), // exclude the empty stub
-            stream: false,
+            stream: true,   // prefer stream for robustness through proxy/ingress
             options: {}
           }),
           signal: abortController.signal
@@ -947,23 +999,72 @@ INDEX_HTML = r"""<!doctype html>
           throw new Error('Chat request failed: ' + res.status + ' ' + txt);
         }
 
-        const data = await res.json();
-        console.log('[send] full response data', data);
+        // Robust reader: handle both full JSON (stream:false style) and NDJSON stream lines
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        let gotContent = false;
 
-        const tok = extractToken(data);
-        if (tok) {
-          assistantMessage.content = tok;
-        } else if (data.message && data.message.content) {
-          assistantMessage.content = data.message.content;
-        } else if (data.response) {
-          assistantMessage.content = data.response;
-        } else {
+        if (ct.includes('json') && !ct.includes('stream')) {
+          // Full single object response
+          try {
+            const data = await res.json();
+            console.log('[send] full json response data', data);
+            const tok = extractToken(data) || (data.message && data.message.content) || data.response || '';
+            if (tok) {
+              assistantMessage.content = tok;
+              gotContent = true;
+            }
+          } catch (je) {
+            console.warn('[send] json() failed, falling back to stream reader', je);
+          }
+        }
+
+        if (!gotContent) {
+          // NDJSON / streaming reader (pattern that works for /api/pull)
+          const reader = res.body ? res.body.getReader() : null;
+          if (reader) {
+            const dec = new TextDecoder();
+            let buf = '';
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += dec.decode(value, { stream: true });
+              const lines = buf.split('\n');
+              buf = lines.pop() || '';
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                  const obj = JSON.parse(line);
+                  // Log a few chunks so user can see in console exactly what comes back
+                  if (obj.message && obj.message.content) {
+                    console.log('[send chunk]', obj.message.content);
+                  } else {
+                    console.log('[send chunk]', obj);
+                  }
+                  const tok = extractToken(obj);
+                  if (tok) {
+                    assistantMessage.content += tok;
+                    gotContent = true;
+                    renderMessages(chat);   // live update as tokens arrive
+                  }
+                  if (obj.done === true) {
+                    console.log('[send] done=true received');
+                    break;
+                  }
+                } catch (pe) {}
+              }
+            }
+          }
+        }
+
+        // If we got nothing at all, give a clear diagnostic
+        if (!assistantMessage.content) {
           assistantMessage.content = '[no content returned by model]';
         }
 
-        // ensure final render + persist
+        // final render + persist
         renderMessages(chat);
-        await saveChatRemote(chat);
+        saveChatRemote(chat);
+        console.log('[send] final assistant content length=', assistantMessage.content.length);
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('[send] generation error', err);
@@ -972,16 +1073,14 @@ INDEX_HTML = r"""<!doctype html>
           }
           renderMessages(chat);
         }
-        // always persist so the turn is recorded
         if (currentChatId) {
-          await saveChatRemote(chat).catch(() => {});
+          saveChatRemote(chat).catch(() => {});
         }
       } finally {
         generationInFlight = false;
         stopBtn.classList.add('hidden');
         stopBtn.classList.remove('flex');
         abortController = null;
-        // refresh list in case title or counts changed
         refreshChatList().catch(() => {});
       }
     }
@@ -1206,6 +1305,7 @@ INDEX_HTML = r"""<!doctype html>
       // If no chats, start one
       const listRes = await fetch(INGRESS_BASE + 'api/chats');
       const chats = await listRes.json();
+      console.log('[init] existing chats on load:', chats.length);
       if (chats.length === 0) {
         await createNewChat();
       } else {
@@ -1259,6 +1359,7 @@ def api_create_chat():
     payload = request.get_json(silent=True) or {}
     model = payload.get("model", "")
     chat = create_new_chat(model)
+    print(f"[chats] api_create_chat -> id={chat['id']} model={model}")
     return jsonify(chat), 201
 
 @app.route("/api/chats/<chat_id>", methods=["GET"])
@@ -1272,6 +1373,7 @@ def api_get_chat(chat_id):
 def api_save_chat(chat_id):
     data = request.get_json(force=True)
     if not data or data.get("id") != chat_id:
+        print(f"[chats] api_save_chat {chat_id} REJECTED invalid payload")
         return jsonify({"error": "invalid_payload"}), 400
     saved = save_chat(data)
     return jsonify(saved)
