@@ -875,12 +875,12 @@ INDEX_HTML = r"""<!doctype html>
         await createNewChat();
       }
 
+      // Try to fetch fresh chat, but fall back to a minimal object so we always
+      // show the user message even if persistence lookup temporarily fails.
       let chat = await fetchChat(currentChatId);
       if (!chat) {
-        // Chat persistence lookup failed (possible transient ingress / backend issue).
-        // The user message was not sent, but at least the input is cleared.
-        console.warn('[send] fetchChat failed after submit - user message not recorded this time');
-        return;
+        console.warn('[send] fetchChat failed after submit - using local chat object');
+        chat = { id: currentChatId, messages: [], model: currentModel || '' };
       }
 
       // append user message
@@ -921,16 +921,16 @@ INDEX_HTML = r"""<!doctype html>
       console.log('[send] starting /api/chat for model', currentModel || chat.model);
 
       try {
-        // Use stream:true + NDJSON reader so we get incremental tokens (like the /api/pull handler).
-        // Non-stream single-JSON path was unreliable with the proxy + HA ingress buffering.
-        // Streaming chunks are small NDJSON lines; we accumulate into the assistant stub.
+        // Use stream:false + res.json() for a single full response object.
+        // This avoids potential buffering issues with NDJSON streaming through the
+        // Flask proxy + HA ingress. For small models the full response is fast anyway.
         const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel || chat.model,
             messages: chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })), // exclude the empty stub
-            stream: true,
+            stream: false,
             options: {}
           }),
           signal: abortController.signal
@@ -943,37 +943,17 @@ INDEX_HTML = r"""<!doctype html>
           throw new Error('Chat request failed: ' + res.status + ' ' + txt);
         }
 
-        // Stream NDJSON exactly like the pull progress handler
-        const reader = res.body.getReader();
-        const dec = new TextDecoder();
-        let buf = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() || '';
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            try {
-              const obj = JSON.parse(trimmed);
-              console.log('[send] chat chunk', obj);
-              const tok = extractToken(obj);
-              if (tok) {
-                assistantMessage.content += tok;
-                renderMessages(chat);
-              }
-              if (obj.done) {
-                break;
-              }
-            } catch (e) {
-              // ignore partial/broken lines
-            }
-          }
-        }
+        const data = await res.json();
+        console.log('[send] full response data', data);
 
-        if (!assistantMessage.content) {
+        const tok = extractToken(data);
+        if (tok) {
+          assistantMessage.content = tok;
+        } else if (data.message && data.message.content) {
+          assistantMessage.content = data.message.content;
+        } else if (data.response) {
+          assistantMessage.content = data.response;
+        } else {
           assistantMessage.content = '[no content returned by model]';
         }
 
