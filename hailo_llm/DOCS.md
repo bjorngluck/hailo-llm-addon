@@ -54,6 +54,12 @@ To force the store to see the new version:
 - Add-ons → Add-on Store → ⋮ → Repositories → click the refresh icon next to your repository.
 - Or remove the repository and re-add it.
 
+**Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
+
+- Your latest version bump (e.g. 2.0.21) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- After pushing to `main`, refresh the repo in the store (see above).
+- For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
+
 We also ship a `build.yaml` (matching patterns used by other Hailo-10H add-ons) to improve build compatibility.
 
 We provide both `repository.json` and `repository.yaml` for maximum compatibility with the Home Assistant addon store.
