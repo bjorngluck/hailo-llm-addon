@@ -32,6 +32,9 @@ RUN pip3 install --break-system-packages --no-cache-dir \
 
 COPY rootfs /
 
+RUN pip3 install --break-system-packages --no-cache-dir \
+    -r /opt/hailo_llm/requirements.txt || true
+
 RUN chmod a+x /opt/hailo_llm/run.sh
 
 WORKDIR /opt/hailo_llm
