@@ -790,6 +790,11 @@ INDEX_HTML = r"""<!doctype html>
         }
         inner.innerHTML = content || '<span class="opacity-50">(empty)</span>';
 
+        // Live cursor while generating the last assistant message
+        if (msg.role === 'assistant' && generationInFlight && idx === chat.messages.length - 1) {
+          inner.classList.add('streaming');
+        }
+
         const meta = document.createElement('div');
         meta.className = `text-[10px] mt-1 px-1 flex gap-2 items-center ${msg.role === 'user' ? 'justify-end text-indigo-200' : 'text-zinc-400'}`;
         meta.innerHTML = `<span>${fmtTime(msg.ts)}</span>`;
@@ -908,15 +913,16 @@ INDEX_HTML = r"""<!doctype html>
       console.log('[send] starting /api/chat for model', currentModel || chat.model);
 
       try {
-        // Use stream: false for reliable full response (streaming NDJSON can be buffered by ingress/proxy).
-        // This ensures we get a response even if the binary returns a single JSON object.
+        // Use stream:true + NDJSON reader so we get incremental tokens (like the /api/pull handler).
+        // Non-stream single-JSON path was unreliable with the proxy + HA ingress buffering.
+        // Streaming chunks are small NDJSON lines; we accumulate into the assistant stub.
         const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: currentModel || chat.model,
             messages: chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })), // exclude the empty stub
-            stream: false,
+            stream: true,
             options: {}
           }),
           signal: abortController.signal
@@ -929,23 +935,42 @@ INDEX_HTML = r"""<!doctype html>
           throw new Error('Chat request failed: ' + res.status + ' ' + txt);
         }
 
-        const data = await res.json();
-        console.log('[send] full response data', data);
-
-        const tok = extractToken(data);
-        if (tok) {
-          assistantMessage.content = tok;
-        } else if (data.message && data.message.content) {
-          assistantMessage.content = data.message.content;
-        } else if (data.response) {
-          assistantMessage.content = data.response;
-        } else {
-          assistantMessage.content = '[No content in response from model]';
+        // Stream NDJSON exactly like the pull progress handler
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const obj = JSON.parse(trimmed);
+              console.log('[send] chat chunk', obj);
+              const tok = extractToken(obj);
+              if (tok) {
+                assistantMessage.content += tok;
+                renderMessages(chat);
+              }
+              if (obj.done) {
+                break;
+              }
+            } catch (e) {
+              // ignore partial/broken lines
+            }
+          }
         }
 
-        renderMessages(chat);
+        if (!assistantMessage.content) {
+          assistantMessage.content = '[no content returned by model]';
+        }
 
-        // persist the final content
+        // ensure final render + persist
+        renderMessages(chat);
         await saveChatRemote(chat);
       } catch (err) {
         if (err.name !== 'AbortError') {

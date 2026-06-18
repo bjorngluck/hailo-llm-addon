@@ -1,3 +1,11 @@
+## 2.0.20
+- Chat fix: messages sent from UI now receive and display assistant responses.
+  - Switched sendMessage to use `stream: true` + NDJSON body reader (same pattern as the working /api/pull handler) to accumulate incremental tokens reliably.
+  - The previous `stream: false` + single `res.json()` path was not producing visible responses (likely due to proxy/ingress interaction with non-stream replies).
+  - Assistant stub is still created early + persisted; tokens are appended live and re-rendered (with streaming cursor).
+  - Keeps the early user message save + robust error paths.
+- Bumped to 2.0.20.
+
 ## 2.0.19
 - **Fixed model persistence root cause.** Validated against https://github.com/hailo-ai/hailo_model_zoo_genai source:
   - HEF blobs are written by BlobResourceProvider to `<data_home>/hailo-ollama/models/blob/sha256_<hash>` (note singular "blob").
