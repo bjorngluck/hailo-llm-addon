@@ -1,3 +1,12 @@
+## 2.0.19
+- **Fixed model persistence root cause.** Validated against https://github.com/hailo-ai/hailo_model_zoo_genai source:
+  - HEF blobs are written by BlobResourceProvider to `<data_home>/hailo-ollama/models/blob/sha256_<hash>` (note singular "blob").
+  - `data_home()` = `$XDG_DATA_HOME` (if set) else `$HOME/.local/share`. `OLLAMA_MODELS` is **ignored**.
+  - Manifests are package-installed to `/usr/share/hailo-ollama/models/manifests/` and discovered at runtime.
+- run.sh: set `XDG_DATA_HOME=/media/hailo_llm`, mkdir correct `.../blob` dir, stopped destructive `rm -rf /usr/share/hailo-ollama` (preserves package manifests), launch with correct env, updated diagnostics.
+- server.py: updated MODELS_DIR and docs to the real blob location.
+- Bumped to 2.0.19.
+
 ## 2.0.18
 - Unified model storage under /media/hailo_llm/hailo-ollama/models (blobs + manifests) so the binary's HEF files are written to the same persistent tree as the manifests. OLLAMA_MODELS now points there.
 - Added explicit inline styles and stronger CSS for the Models button, sidebar minimise (☰), and delete chat icons to force visible theme colors instead of white.
