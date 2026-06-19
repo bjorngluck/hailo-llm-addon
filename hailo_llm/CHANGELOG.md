@@ -1,3 +1,10 @@
+## 2.0.24
+- Troubleshooting improvements for persistent chat issues:
+  - hailo-ollama backend logs now written to `/data/hailo-ollama.log` (accessible location) + teed to addon logs.
+  - Added comprehensive set of test `curl` commands in DOCS.md to isolate backend vs UI/ingress problems (non-stream, streaming, health, models, persistence APIs).
+  - Updated readiness checks and docs to point at the new log location.
+- Bumped to 2.0.24.
+
 ## 2.0.23
 - Bump to force HA store to detect new version after merge to main. Upgrade button should now offer the new release.
 - All previous fixes from 2.0.22 included (chat tracing, history titles, optimistic renders, robust /api/chat handling).

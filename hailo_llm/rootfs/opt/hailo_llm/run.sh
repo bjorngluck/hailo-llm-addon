@@ -69,6 +69,7 @@ chmod -R a+w "$BLOB_DIR" 2>/dev/null || true
 echo "=== Persistence layout (per hailo_model_zoo_genai) ==="
 echo "XDG_DATA_HOME=$XDG_DATA_HOME"
 echo "Blob dir (HEFs): $BLOB_DIR"
+echo "Hailo-ollama logs: /data/hailo-ollama.log (visible in HA Terminal/SSH or Filebrowser)"
 echo "$MEDIA_BASE/hailo-ollama contents:"
 ls -la "$MEDIA_BASE/hailo-ollama" 2>/dev/null | head -10 || echo "  (empty)"
 echo "Manifests (package + copy):"
@@ -114,7 +115,9 @@ ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || tr
 # Note: hailo-ollama uses OLLAMA_HOST for listen address (main.cpp).
 export OLLAMA_HOST=127.0.0.1:11434
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
-XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 hailo-ollama > /tmp/hailo-ollama.log 2>&1 &
+# Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
+# Also tee to stdout so logs appear in Home Assistant addon logs where possible.
+XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 hailo-ollama 2>&1 | tee /data/hailo-ollama.log &
 HAILO_PID=$!
 
 # Make sure we clean up the background process on exit
@@ -134,9 +137,9 @@ for i in $(seq 1 45); do
 done
 
 if [ "$READY" -ne 1 ]; then
-    echo "⚠ hailo-ollama did not become ready in time. Check /tmp/hailo-ollama.log"
+    echo "⚠ hailo-ollama did not become ready in time. Check /data/hailo-ollama.log"
     echo "=== Last lines of hailo-ollama.log ==="
-    tail -30 /tmp/hailo-ollama.log 2>/dev/null || true
+    tail -30 /data/hailo-ollama.log 2>/dev/null || true
     # We still continue — the UI can surface the error
 fi
 
