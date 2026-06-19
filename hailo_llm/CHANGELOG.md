@@ -1,3 +1,7 @@
+## 2.0.25
+- Added `/api/logs` endpoint (and updated /health) that returns the last ~100 lines of the hailo-ollama backend log. Makes troubleshooting much easier without needing to exec into the container.
+- Bumped to 2.0.25.
+
 ## 2.0.24
 - Troubleshooting improvements for persistent chat issues:
   - hailo-ollama backend logs now written to `/data/hailo-ollama.log` (accessible location) + teed to addon logs.

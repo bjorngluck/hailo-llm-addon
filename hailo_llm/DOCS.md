@@ -119,6 +119,9 @@ curl -N --no-buffer -s -X POST $HOST/api/chat \
 
 # 6. Test the UI's chat persistence endpoints (the /api/chats used by the embedded SPA)
 curl -s $HOST/api/chats | jq
+
+# 7. Hailo backend logs (last 100 lines) - super useful for troubleshooting chat
+curl -s $HOST/api/logs | jq -r .log
 ```
 
 **Direct backend test (from inside the container, e.g. via docker exec or Terminal addon)**
