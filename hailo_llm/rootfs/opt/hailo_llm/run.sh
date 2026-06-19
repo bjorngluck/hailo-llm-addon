@@ -81,6 +81,9 @@ ls -la "$MEDIA_BASE/cache" 2>/dev/null | head -3 || echo "  (empty)"
 
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
+    # Quick diagnostic for device contention (helps when vdevice allocation fails later)
+    echo "Current users of /dev/hailo0 (if any):"
+    fuser /dev/hailo0 2>/dev/null || echo "  (fuser not available or no users)"
 else
     echo "⚠ WARNING: No Hailo device found at /dev/hailo0"
 fi
