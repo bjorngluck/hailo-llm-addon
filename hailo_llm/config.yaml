@@ -17,7 +17,8 @@ devices:
   - "/dev/h1x-0"
   - "/dev/hailo0"
 full_access: true
-privileged: true
+privileged:
+  - SYS_RAWIO
 apparmor: false
 timeout: 300
 ports:
