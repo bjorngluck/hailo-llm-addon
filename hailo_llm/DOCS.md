@@ -60,7 +60,7 @@ To force the store to see the new version (when the upgrade button only shows th
 
 **Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
 
-- Your latest version bump (e.g. 2.0.26) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- Your latest version bump (e.g. 2.0.32) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
@@ -122,6 +122,9 @@ curl -s $HOST/api/chats | jq
 
 # 7. Hailo backend logs (last 100 lines) - super useful for troubleshooting chat
 curl -s $HOST/api/logs | jq -r .log
+
+# 8. Device holders check (call this right after a failed chat)
+curl -s $HOST/api/debug/device | jq
 ```
 
 **Direct backend test (from inside the container, e.g. via docker exec or Terminal addon)**

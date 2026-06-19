@@ -1,6 +1,6 @@
 name: "Hailo LLM"
 description: "Hailo-10H Model Zoo + Ollama LLM server"
-version: "2.0.26"
+version: "2.0.32"
 slug: "hailo_llm"
 url: "https://github.com/bjorngluck/hailo-llm-addon"
 arch:
@@ -14,10 +14,15 @@ ingress_entry: /
 panel_icon: "mdi:robot"
 panel_title: "Hailo LLM"
 devices:
+  - "/dev/h1x-0"
   - "/dev/hailo0"
+# full_access + device map to approximate the official hailo docker example:
+#   docker run ... --device /dev/h1x-0 ...
+# full_access gives broad device/fs access needed for HailoRT VDevice.
 full_access: true
-privileged:
-  - SYS_RAWIO
+# Run fully privileged (like many Hailo/edge AI official docker examples)
+# to ensure HailoRT can create VDevice and access NPU resources.
+privileged: true
 apparmor: false
 timeout: 300
 ports:

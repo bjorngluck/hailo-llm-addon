@@ -1,3 +1,32 @@
+## 2.0.32
+- Nginx routing fix: explicitly route /api/chats*, /health, /api/logs, /api/debug/*, /api/ui/* to the Flask layer (these were previously going to be stolen by the broad /api/ proxy to the binary, breaking chat persistence and debug endpoints). Longest-prefix locations ensure custom paths reach Flask while real ollama /api/* still hit the binary directly.
+- Bumped to 2.0.32.
+
+## 2.0.31
+- Fixed critical startup crash: nginx config now includes required `events {}` + `http { server {} }` wrapper (bare `server {}` at top level was invalid for `nginx -c`). Addon no longer loops restarting.
+- Aligned VDevice sharing env exactly to maintainers' hailo_model_zoo_genai USAGE.rst: `HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED` (removed non-standard bare `HAILO_VDEVICE_GROUP_ID`).
+- Run container as fully `privileged: true` (plus explicit devices) to more closely match official hailo docker examples that use `--device /dev/h1x-0`.
+- Kept nginx fronting on 8000 + Flask on 5000 design so exposed port 8000 serves both custom UI and direct-like /api/* from the binary (closer to "hailo-ollama listening on 8000").
+- Bumped to 2.0.31.
+
+## 2.0.30
+- Improved container launch in run.sh: use nohup + redirect + tail (instead of pipe to tee) to avoid potential interference with hailo-ollama VDevice creation.
+- Set both HAILO_VDEVICE_GROUP_ID=SHARED and HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED (matching community examples for sharing).
+- Removed unused hailort python wheel from Dockerfile (possible side effects in container).
+- Bumped to 2.0.30.
+
+## 2.0.29
+- Added /api/debug/device endpoint (and updated docs) to allow on-demand checking of processes holding /dev/hailo0 during troubleshooting (useful when inference fails with vdevice errors even if startup shows clean).
+- Bumped to 2.0.29.
+
+## 2.0.28
+- Improved device usage diagnostic in run.sh to use /proc directly (portable, no dependency on fuser command) for better debugging of vdevice/Hailo device contention at startup.
+- Bumped to 2.0.28.
+
+## 2.0.27
+- Added startup diagnostic in run.sh to log current users of /dev/hailo0 (via fuser) to help debug vdevice contention issues.
+- Bumped to 2.0.27.
+
 ## 2.0.26
 - Diagnosis from user-provided logs: HailoRT device allocation error (HAILO_OUT_OF_PHYSICAL_DEVICES) when loading model for inference. The HEF blob path is found correctly, but vdevice creation fails.
 - Fix: Set HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED in run.sh (as recommended by hailo_model_zoo_genai) to allow device sharing.

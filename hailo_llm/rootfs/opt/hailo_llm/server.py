@@ -1438,6 +1438,41 @@ def api_logs():
     except Exception as e:
         return jsonify({"path": log_path, "error": str(e)})
 
+@app.route("/api/debug/device")
+def debug_device():
+    """Quick check for processes using /dev/hailo0 (container view only).
+    Note: This only sees processes inside the addon container. Check on the host for full picture."""
+    import os
+    result = {"device": "/dev/hailo0", "holders": [], "note": "container view only - run similar check on host"}
+    if not os.path.exists("/dev/hailo0"):
+        result["error"] = "no device"
+        return jsonify(result)
+    try:
+        for pid in os.listdir("/proc"):
+            if not pid.isdigit():
+                continue
+            try:
+                fd_dir = f"/proc/{pid}/fd"
+                if os.path.isdir(fd_dir):
+                    for fd in os.listdir(fd_dir):
+                        try:
+                            target = os.readlink(f"{fd_dir}/{fd}")
+                            if "/dev/hailo0" in target:
+                                cmd = ""
+                                try:
+                                    with open(f"/proc/{pid}/cmdline", "rb") as f:
+                                        cmd = f.read().replace(b"\0", b" ").decode(errors="ignore").strip()
+                                except:
+                                    pass
+                                result["holders"].append({"pid": pid, "cmd": cmd[:200]})
+                        except:
+                            pass
+            except:
+                pass
+    except Exception as e:
+        result["error"] = str(e)
+    return jsonify(result)
+
 # -----------------------------------------------------------------------------
 # UI catch-all (must be registered AFTER all /api and /hailo routes)
 #
