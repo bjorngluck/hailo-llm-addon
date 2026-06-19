@@ -82,7 +82,7 @@ ls -la "$MEDIA_BASE/cache" 2>/dev/null | head -3 || echo "  (empty)"
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
     # Portable check for processes using the device (fuser may not be present)
-    echo "Checking for processes using /dev/hailo0 (via /proc):"
+    echo "Checking for processes using /dev/hailo0 (via /proc - CONTAINER VIEW ONLY):"
     found=0
     for pid in /proc/[0-9]*; do
         pidnum=$(basename "$pid")
@@ -93,8 +93,10 @@ if [ -e /dev/hailo0 ]; then
         fi
     done
     if [ "$found" -eq 0 ]; then
-        echo "  No processes currently holding /dev/hailo0"
+        echo "  No processes currently holding /dev/hailo0 (inside container)"
     fi
+    echo "NOTE: If VDevice fails with 'found: 0', the device may be held on the HOST (outside this container)."
+    echo "Check on host (via SSH/Terminal addon): sudo lsof /dev/hailo0 || sudo fuser -v /dev/hailo0 || ls -l /proc/*/fd 2>/dev/null | grep -E 'hailo|h1x'"
 else
     echo "⚠ WARNING: No Hailo device found at /dev/hailo0"
 fi
@@ -131,10 +133,11 @@ export OLLAMA_HOST=127.0.0.1:11434
 # Allow sharing the Hailo device with other HailoRT applications (e.g. other addons using NPU).
 # See https://github.com/hailo-ai/hailo_model_zoo_genai for details (env var per USAGE.rst).
 export HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED
+export HAILO_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
 # Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
 # Use nohup and redirect to avoid pipe affecting the process.
-nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED \
+nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED HAILO_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED \
   hailo-ollama > /data/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 

@@ -1,3 +1,9 @@
+## 2.0.34
+- Improved device diagnostics in run.sh startup (added host-side check suggestions for VDevice "found: 0" errors).
+- Added both HAILO_OLLAMA_VDEVICE_GROUP_ID and HAILO_VDEVICE_GROUP_ID env for better compatibility with sharing.
+- Bumped to 2.0.34 to ensure latest changes (including icons, ASCII repo name, privileged list) are visible in HA Add-on Store.
+- **To make the addon appear for installation**: Remove the custom repo in HA, run `ha supervisor restart`, re-add https://github.com/bjorngluck/hailo-llm-addon , then refresh.
+
 ## 2.0.33
 - Bumped version to 2.0.33 to force Home Assistant Add-on Store to detect the update after merge to `main`.
 - All previous fixes (nginx crash, VDevice alignment, privileged mode, chat routing, persistence, UI) are included.
