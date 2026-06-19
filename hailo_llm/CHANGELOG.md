@@ -1,3 +1,7 @@
+## 2.0.29
+- Added /api/debug/device endpoint (and updated docs) to allow on-demand checking of processes holding /dev/hailo0 during troubleshooting (useful when inference fails with vdevice errors even if startup shows clean).
+- Bumped to 2.0.29.
+
 ## 2.0.28
 - Improved device usage diagnostic in run.sh to use /proc directly (portable, no dependency on fuser command) for better debugging of vdevice/Hailo device contention at startup.
 - Bumped to 2.0.28.
