@@ -129,14 +129,12 @@ ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || tr
 # Note: hailo-ollama uses OLLAMA_HOST for listen address (main.cpp).
 export OLLAMA_HOST=127.0.0.1:11434
 # Allow sharing the Hailo device with other HailoRT applications (e.g. other addons using NPU).
-# See https://github.com/hailo-ai/hailo_model_zoo_genai for details.
-# Set both to ensure VDevice sharing works for the binary.
-export HAILO_VDEVICE_GROUP_ID=SHARED
-export HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED
+# See https://github.com/hailo-ai/hailo_model_zoo_genai for details (env var per USAGE.rst).
+export HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
 # Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
 # Use nohup and redirect to avoid pipe affecting the process.
-nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_VDEVICE_GROUP_ID=SHARED HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED \
+nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED \
   hailo-ollama > /data/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
@@ -168,28 +166,47 @@ echo "Starting web UI (Flask on 5000) + nginx on 8000 proxying to binary (to mat
 PORT=5000 python3 /opt/hailo_llm/server.py &
 FLASK_PID=$!
 
-# Nginx config to proxy:
-# / -> Flask UI (5000)
-# /api/ and /hailo/ -> binary (11434)
-# This way port 8000 behaves like the official binary on 8000 for the API
+# Nginx config to proxy (full valid config required when using -c):
+# / -> Flask UI (5000)   [our SPA + chat persistence]
+# /api/ and /hailo/ -> binary (11434)  [so 8000 surface matches official hailo-ollama API]
+# This way port 8000 behaves like the official binary on 8000 for the API + serves custom UI.
 cat > /tmp/nginx.conf << 'NGINXEOF'
-server {
-    listen 8000;
-    location / {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-    location /api/ {
-        proxy_pass http://127.0.0.1:11434;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-    location /hailo/ {
-        proxy_pass http://127.0.0.1:11434;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
+worker_processes 1;
+events {
+    worker_connections 1024;
+}
+http {
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+
+    server {
+        listen 8000;
+        location / {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /api/ {
+            proxy_pass http://127.0.0.1:11434;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_buffering off;
+            proxy_http_version 1.1;
+        }
+        location /hailo/ {
+            proxy_pass http://127.0.0.1:11434;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_buffering off;
+            proxy_http_version 1.1;
+        }
     }
 }
 NGINXEOF

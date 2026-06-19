@@ -1,3 +1,10 @@
+## 2.0.31
+- Fixed critical startup crash: nginx config now includes required `events {}` + `http { server {} }` wrapper (bare `server {}` at top level was invalid for `nginx -c`). Addon no longer loops restarting.
+- Aligned VDevice sharing env exactly to maintainers' hailo_model_zoo_genai USAGE.rst: `HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED` (removed non-standard bare `HAILO_VDEVICE_GROUP_ID`).
+- Run container as fully `privileged: true` (plus explicit devices) to more closely match official hailo docker examples that use `--device /dev/h1x-0`.
+- Kept nginx fronting on 8000 + Flask on 5000 design so exposed port 8000 serves both custom UI and direct-like /api/* from the binary (closer to "hailo-ollama listening on 8000").
+- Bumped to 2.0.31.
+
 ## 2.0.30
 - Improved container launch in run.sh: use nohup + redirect + tail (instead of pipe to tee) to avoid potential interference with hailo-ollama VDevice creation.
 - Set both HAILO_VDEVICE_GROUP_ID=SHARED and HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED (matching community examples for sharing).
