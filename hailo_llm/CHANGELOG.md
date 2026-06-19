@@ -1,3 +1,7 @@
+## 2.0.27
+- Added startup diagnostic in run.sh to log current users of /dev/hailo0 (via fuser) to help debug vdevice contention issues.
+- Bumped to 2.0.27.
+
 ## 2.0.26
 - Diagnosis from user-provided logs: HailoRT device allocation error (HAILO_OUT_OF_PHYSICAL_DEVICES) when loading model for inference. The HEF blob path is found correctly, but vdevice creation fails.
 - Fix: Set HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED in run.sh (as recommended by hailo_model_zoo_genai) to allow device sharing.
