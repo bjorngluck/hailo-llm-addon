@@ -130,15 +130,22 @@ ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || tr
 export OLLAMA_HOST=127.0.0.1:11434
 # Allow sharing the Hailo device with other HailoRT applications (e.g. other addons using NPU).
 # See https://github.com/hailo-ai/hailo_model_zoo_genai for details.
+# Set both to ensure VDevice sharing works for the binary.
+export HAILO_VDEVICE_GROUP_ID=SHARED
 export HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
 # Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
-# Also tee to stdout so logs appear in Home Assistant addon logs where possible.
-XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED hailo-ollama 2>&1 | tee /data/hailo-ollama.log &
+# Use nohup and redirect to avoid pipe affecting the process; tail for container logs.
+nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_VDEVICE_GROUP_ID=SHARED HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED \
+  hailo-ollama > /data/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
-# Make sure we clean up the background process on exit
-trap 'echo "Stopping hailo-ollama (pid $HAILO_PID)"; kill $HAILO_PID 2>/dev/null || true; wait $HAILO_PID 2>/dev/null || true' EXIT INT TERM
+# Tail the log to container stdout (addon logs) in background
+tail -f /data/hailo-ollama.log &
+TAIL_PID=$!
+
+# Make sure we clean up the background processes on exit
+trap 'echo "Stopping hailo-ollama (pid $HAILO_PID) and tail (pid $TAIL_PID)"; kill $HAILO_PID $TAIL_PID 2>/dev/null || true; wait $HAILO_PID $TAIL_PID 2>/dev/null || true' EXIT INT TERM
 
 # Wait for the inference server to become ready (it may need a moment for the NPU)
 echo "Waiting for hailo-ollama to become ready..."

@@ -1440,10 +1440,10 @@ def api_logs():
 
 @app.route("/api/debug/device")
 def debug_device():
-    """Quick check for processes using /dev/hailo0 (same logic as startup)."""
+    """Quick check for processes using /dev/hailo0 (container view only).
+    Note: This only sees processes inside the addon container. Check on the host for full picture."""
     import os
-    import subprocess
-    result = {"device": "/dev/hailo0", "holders": []}
+    result = {"device": "/dev/hailo0", "holders": [], "note": "container view only - run similar check on host"}
     if not os.path.exists("/dev/hailo0"):
         result["error"] = "no device"
         return jsonify(result)

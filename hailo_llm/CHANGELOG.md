@@ -1,3 +1,9 @@
+## 2.0.30
+- Improved container launch in run.sh: use nohup + redirect + tail (instead of pipe to tee) to avoid potential interference with hailo-ollama VDevice creation.
+- Set both HAILO_VDEVICE_GROUP_ID=SHARED and HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED (matching community examples for sharing).
+- Removed unused hailort python wheel from Dockerfile (possible side effects in container).
+- Bumped to 2.0.30.
+
 ## 2.0.29
 - Added /api/debug/device endpoint (and updated docs) to allow on-demand checking of processes holding /dev/hailo0 during troubleshooting (useful when inference fails with vdevice errors even if startup shows clean).
 - Bumped to 2.0.29.

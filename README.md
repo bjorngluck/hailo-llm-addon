@@ -2,7 +2,7 @@
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Addon-blue?logo=home-assistant)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-aarch64-green)](https://github.com/bjorngluck/hailo-llm-addon)
-[![Version](https://img.shields.io/badge/version-2.0.29-orange)](https://github.com/bjorngluck/hailo-llm-addon/releases)
+[![Version](https://img.shields.io/badge/version-2.0.30-orange)](https://github.com/bjorngluck/hailo-llm-addon/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Hailo-10H Model Zoo + Ollama-compatible LLM server with a beautiful built-in chat UI for Home Assistant.**

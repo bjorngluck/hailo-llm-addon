@@ -27,9 +27,6 @@ RUN dpkg -i /tmp/packages/hailort_5.3.0_arm64.deb || true && \
     which hailo-ollama || (echo "FATAL: hailo-ollama binary NOT found after package install!" && ls -la /usr/bin/hailo* /usr/local/bin/hailo* 2>/dev/null || true && exit 1) && \
     rm -rf /tmp/packages/*.deb /var/lib/apt/lists/*
 
-RUN pip3 install --break-system-packages --no-cache-dir \
-    /tmp/packages/hailort-5.3.0-cp311-cp311-linux_aarch64.whl || true
-
 COPY rootfs /
 
 RUN pip3 install --break-system-packages --no-cache-dir \
