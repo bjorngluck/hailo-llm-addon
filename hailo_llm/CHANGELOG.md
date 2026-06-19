@@ -1,3 +1,20 @@
+## 2.0.26
+- Diagnosis from user-provided logs: HailoRT device allocation error (HAILO_OUT_OF_PHYSICAL_DEVICES) when loading model for inference. The HEF blob path is found correctly, but vdevice creation fails.
+- Fix: Set HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED in run.sh (as recommended by hailo_model_zoo_genai) to allow device sharing.
+- Improved /api/logs to strip ANSI color codes for cleaner output.
+- Bumped to 2.0.26.
+
+## 2.0.25
+- Added `/api/logs` endpoint (and updated /health) that returns the last ~100 lines of the hailo-ollama backend log. Makes troubleshooting much easier without needing to exec into the container.
+- Bumped to 2.0.25.
+
+## 2.0.24
+- Troubleshooting improvements for persistent chat issues:
+  - hailo-ollama backend logs now written to `/data/hailo-ollama.log` (accessible location) + teed to addon logs.
+  - Added comprehensive set of test `curl` commands in DOCS.md to isolate backend vs UI/ingress problems (non-stream, streaming, health, models, persistence APIs).
+  - Updated readiness checks and docs to point at the new log location.
+- Bumped to 2.0.24.
+
 ## 2.0.23
 - Bump to force HA store to detect new version after merge to main. Upgrade button should now offer the new release.
 - All previous fixes from 2.0.22 included (chat tracing, history titles, optimistic renders, robust /api/chat handling).

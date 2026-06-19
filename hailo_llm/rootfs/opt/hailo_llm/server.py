@@ -1416,11 +1416,27 @@ def health():
         "backend": BACKEND,
         "models_persisted_at": MODELS_DIR,  # blob dir under XDG_DATA_HOME=/media/hailo_llm (see hailo_model_zoo_genai)
         "chats_persisted_at": CHATS_DIR,
+        "hailo_log": "/data/hailo-ollama.log",
     })
 
 @app.route("/api/ui/recommended-models")
 def recommended_models():
     return jsonify({"recommended": get_recommended_models()})
+
+@app.route("/api/logs")
+def api_logs():
+    """Return last ~100 lines of the hailo-ollama backend log for troubleshooting."""
+    log_path = "/data/hailo-ollama.log"
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()[-100:]
+        # Strip ANSI color codes for cleaner output
+        import re
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        clean_lines = [ansi_escape.sub('', line) for line in lines]
+        return jsonify({"path": log_path, "lines": len(clean_lines), "log": "".join(clean_lines)})
+    except Exception as e:
+        return jsonify({"path": log_path, "error": str(e)})
 
 # -----------------------------------------------------------------------------
 # UI catch-all (must be registered AFTER all /api and /hailo routes)

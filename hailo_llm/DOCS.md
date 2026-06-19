@@ -60,10 +60,80 @@ To force the store to see the new version (when the upgrade button only shows th
 
 **Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
 
-- Your latest version bump (e.g. 2.0.23) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- Your latest version bump (e.g. 2.0.26) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
 We also ship a `build.yaml` (matching patterns used by other Hailo-10H add-ons) to improve build compatibility.
 
 We provide both `repository.json` and `repository.yaml` for maximum compatibility with the Home Assistant addon store.
+
+## Troubleshooting Chat / API Issues
+
+### 1. Hailo-ollama logs (the real backend)
+- Logs are written to `/data/hailo-ollama.log` inside the addon (persistent and host-accessible).
+- How to view:
+  - Install the community "Filebrowser" or "Studio Code Server" addon and browse the addon's data (or /media if you map it).
+  - From Terminal & SSH addon (or SSH to HA): `docker exec -it addon_hailo_llm tail -f /data/hailo-ollama.log` (container name is usually `addon_hailo_llm` or check `ha addons info hailo_llm`).
+  - In the addon logs (Settings → Add-ons → Hailo LLM → Log) you will also see some output because we tee the logs.
+- The startup script also dumps the last 30 lines if the backend doesn't become ready.
+
+### 2. Test curl commands (bypass UI / ingress buffering issues)
+Use these to verify the backend works independently of the web UI, HA ingress, or the Flask proxy.
+
+**Prerequisites**
+- Expose port 8000 on the addon (in the addon config → Network → 8000/tcp → 8000) or use the host IP where the addon is running.
+- Set `HOST=http://YOUR-HA-IP:8000` (or localhost if testing from inside HA).
+
+```bash
+# 1. Basic health (addon proxy + backend reachability)
+curl -s $HOST/health | jq
+
+# 2. List available models (proxied to hailo-ollama)
+curl -s $HOST/api/tags | jq
+
+# 3. List via hailo native endpoint
+curl -s $HOST/hailo/v1/list | jq
+
+# 4. Simple non-streaming chat (easiest for debugging full response)
+curl -s -X POST $HOST/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5:1.5b",
+    "messages": [{"role": "user", "content": "Say hello in one short sentence."}],
+    "stream": false
+  }' | jq
+
+# 5. Streaming chat (NDJSON - what the UI uses under the hood)
+curl -N --no-buffer -s -X POST $HOST/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5:1.5b",
+    "messages": [{"role": "user", "content": "Count to 5 slowly."}],
+    "stream": true
+  }' | while IFS= read -r line; do
+    if [ -n "$line" ]; then
+      echo "$line" | jq -r '.message.content // .response // empty' 2>/dev/null || echo "$line"
+    fi
+  done
+
+# 6. Test the UI's chat persistence endpoints (the /api/chats used by the embedded SPA)
+curl -s $HOST/api/chats | jq
+
+# 7. Hailo backend logs (last 100 lines) - super useful for troubleshooting chat
+curl -s $HOST/api/logs | jq -r .log
+```
+
+**Direct backend test (from inside the container, e.g. via docker exec or Terminal addon)**
+```bash
+docker exec -it addon_hailo_llm curl -s http://127.0.0.1:11434/api/tags | jq
+```
+
+If these curls return proper JSON / tokens but the UI chat is broken, the problem is in the web UI (server.py INDEX_HTML JS) or ingress buffering.
+
+If curls fail or return errors, the issue is with hailo-ollama itself (check /data/hailo-ollama.log) or the proxy in server.py.
+
+### 3. Other quick checks
+- Make sure a model is pulled (use the Models button in UI or the pull curl above).
+- `curl -s $HOST/health` should show `"backend_reachable": true`
+- For streaming problems through ingress: non-stream (`stream:false`) often works better for debugging.
