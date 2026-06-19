@@ -52,7 +52,7 @@ The "Update" button in the Add-on Store can sometimes be greyed out because:
 
 To force the store to see the new version (when the upgrade button only shows the current/old version):
 1. Add-ons → Add-on Store → ⋮ (top right) → Repositories.
-2. Click the refresh icon (circular arrows) next to your "Björn's Hailo Add-ons" repository.
+2. Click the refresh icon (circular arrows) next to your "Bjorngluck Hailo Add-ons" repository.
 3. If still not showing, remove the repository completely, then re-add it using the exact URL: `https://github.com/bjorngluck/hailo-llm-addon`
 4. Wait 30 seconds, then hard-refresh your browser (Ctrl+Shift+R).
 5. On the installed Hailo LLM addon page, use the **⋯** menu → **Rebuild** (this often works even when the store "Update" button is grey or only shows the current version).
