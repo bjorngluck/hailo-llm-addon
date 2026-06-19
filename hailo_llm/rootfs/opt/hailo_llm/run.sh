@@ -135,17 +135,13 @@ export HAILO_VDEVICE_GROUP_ID=SHARED
 export HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
 # Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
-# Use nohup and redirect to avoid pipe affecting the process; tail for container logs.
+# Use nohup and redirect to avoid pipe affecting the process.
 nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_VDEVICE_GROUP_ID=SHARED HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED \
   hailo-ollama > /data/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
-# Tail the log to container stdout (addon logs) in background
-tail -f /data/hailo-ollama.log &
-TAIL_PID=$!
-
 # Make sure we clean up the background processes on exit
-trap 'echo "Stopping hailo-ollama (pid $HAILO_PID) and tail (pid $TAIL_PID)"; kill $HAILO_PID $TAIL_PID 2>/dev/null || true; wait $HAILO_PID $TAIL_PID 2>/dev/null || true' EXIT INT TERM
+trap 'echo "Stopping hailo-ollama (pid $HAILO_PID) and flask (pid $FLASK_PID)"; kill $HAILO_PID $FLASK_PID 2>/dev/null || true; wait $HAILO_PID $FLASK_PID 2>/dev/null || true' EXIT INT TERM
 
 # Wait for the inference server to become ready (it may need a moment for the NPU)
 echo "Waiting for hailo-ollama to become ready..."
@@ -167,6 +163,35 @@ if [ "$READY" -ne 1 ]; then
     # We still continue — the UI can surface the error
 fi
 
-echo "Starting web UI + API proxy on port 8000 (for ingress + Ollama clients)..."
-echo "The UI should be served for all non-API paths (important for HA ingress)."
-exec python3 /opt/hailo_llm/server.py
+echo "Starting web UI (Flask on 5000) + nginx on 8000 proxying to binary (to match official direct binary on 8000 for API + custom UI)"
+# Start Flask UI on internal port 5000
+PORT=5000 python3 /opt/hailo_llm/server.py &
+FLASK_PID=$!
+
+# Nginx config to proxy:
+# / -> Flask UI (5000)
+# /api/ and /hailo/ -> binary (11434)
+# This way port 8000 behaves like the official binary on 8000 for the API
+cat > /tmp/nginx.conf << 'NGINXEOF'
+server {
+    listen 8000;
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location /api/ {
+        proxy_pass http://127.0.0.1:11434;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /hailo/ {
+        proxy_pass http://127.0.0.1:11434;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+NGINXEOF
+
+nginx -c /tmp/nginx.conf -g 'daemon off;'

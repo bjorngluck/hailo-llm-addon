@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libusb-1.0-0 \
     jq \
     tini \
+    nginx \
     && rm -rf /var/lib/apt/lists/*
 
 COPY packages/ /tmp/packages/
