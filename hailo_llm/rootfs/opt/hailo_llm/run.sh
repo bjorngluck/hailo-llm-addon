@@ -184,13 +184,45 @@ http {
 
     server {
         listen 8000;
-        location / {
+
+        # Custom addon endpoints (chat persistence, health, logs, debug, ui helpers) must go to Flask.
+        # These live under /api/chats*, /api/ui/*, /api/logs, /api/debug/*, /health .
+        # Use longer prefix so they win over the broad /api/ below.
+        location /api/chats {
             proxy_pass http://127.0.0.1:5000;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
         }
+        location /api/ui/ {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /api/logs {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        location /api/debug/ {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+        location /health {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Everything else under /api/ and /hailo/ goes straight to the hailo-ollama binary
+        # so port 8000 matches the official direct-on-8000 API surface as closely as possible.
         location /api/ {
             proxy_pass http://127.0.0.1:11434;
             proxy_set_header Host $host;
@@ -206,6 +238,15 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_buffering off;
             proxy_http_version 1.1;
+        }
+
+        # Root + everything else (the SPA UI) to Flask
+        location / {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
         }
     }
 }
