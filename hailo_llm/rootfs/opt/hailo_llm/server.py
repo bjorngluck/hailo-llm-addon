@@ -1430,7 +1430,11 @@ def api_logs():
     try:
         with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()[-100:]
-        return jsonify({"path": log_path, "lines": len(lines), "log": "".join(lines)})
+        # Strip ANSI color codes for cleaner output
+        import re
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        clean_lines = [ansi_escape.sub('', line) for line in lines]
+        return jsonify({"path": log_path, "lines": len(clean_lines), "log": "".join(clean_lines)})
     except Exception as e:
         return jsonify({"path": log_path, "error": str(e)})
 

@@ -114,10 +114,13 @@ ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || tr
 # Persistence is achieved by XDG_DATA_HOME (controls data_home() -> blob dir).
 # Note: hailo-ollama uses OLLAMA_HOST for listen address (main.cpp).
 export OLLAMA_HOST=127.0.0.1:11434
+# Allow sharing the Hailo device with other HailoRT applications (e.g. other addons using NPU).
+# See https://github.com/hailo-ai/hailo_model_zoo_genai for details.
+export HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED
 echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
 # Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
 # Also tee to stdout so logs appear in Home Assistant addon logs where possible.
-XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 hailo-ollama 2>&1 | tee /data/hailo-ollama.log &
+XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=SHARED hailo-ollama 2>&1 | tee /data/hailo-ollama.log &
 HAILO_PID=$!
 
 # Make sure we clean up the background process on exit
