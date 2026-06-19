@@ -1,3 +1,8 @@
+## 2.0.33
+- Bumped version to 2.0.33 to force Home Assistant Add-on Store to detect the update after merge to `main`.
+- All previous fixes (nginx crash, VDevice alignment, privileged mode, chat routing, persistence, UI) are included.
+- **Important for HAOS users**: After pushing, refresh the custom repository in the Add-on Store or use **Rebuild** on the installed addon (see DOCS.md for exact steps).
+
 ## 2.0.32
 - Nginx routing fix: explicitly route /api/chats*, /health, /api/logs, /api/debug/*, /api/ui/* to the Flask layer (these were previously going to be stolen by the broad /api/ proxy to the binary, breaking chat persistence and debug endpoints). Longest-prefix locations ensure custom paths reach Flask while real ollama /api/* still hit the binary directly.
 - Bumped to 2.0.32.
