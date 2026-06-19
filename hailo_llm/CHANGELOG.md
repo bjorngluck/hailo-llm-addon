@@ -1,3 +1,7 @@
+## 2.0.32
+- Nginx routing fix: explicitly route /api/chats*, /health, /api/logs, /api/debug/*, /api/ui/* to the Flask layer (these were previously going to be stolen by the broad /api/ proxy to the binary, breaking chat persistence and debug endpoints). Longest-prefix locations ensure custom paths reach Flask while real ollama /api/* still hit the binary directly.
+- Bumped to 2.0.32.
+
 ## 2.0.31
 - Fixed critical startup crash: nginx config now includes required `events {}` + `http { server {} }` wrapper (bare `server {}` at top level was invalid for `nginx -c`). Addon no longer loops restarting.
 - Aligned VDevice sharing env exactly to maintainers' hailo_model_zoo_genai USAGE.rst: `HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED` (removed non-standard bare `HAILO_VDEVICE_GROUP_ID`).
