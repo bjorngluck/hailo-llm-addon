@@ -81,9 +81,20 @@ ls -la "$MEDIA_BASE/cache" 2>/dev/null | head -3 || echo "  (empty)"
 
 if [ -e /dev/hailo0 ]; then
     echo "✓ Hailo device found at /dev/hailo0"
-    # Quick diagnostic for device contention (helps when vdevice allocation fails later)
-    echo "Current users of /dev/hailo0 (if any):"
-    fuser /dev/hailo0 2>/dev/null || echo "  (fuser not available or no users)"
+    # Portable check for processes using the device (fuser may not be present)
+    echo "Checking for processes using /dev/hailo0 (via /proc):"
+    found=0
+    for pid in /proc/[0-9]*; do
+        pidnum=$(basename "$pid")
+        if [ -d "$pid/fd" ] && ls -l "$pid/fd" 2>/dev/null | grep -q "/dev/hailo0"; then
+            cmd=$(cat "$pid/cmdline" 2>/dev/null | tr '\0' ' ' | head -c 200)
+            echo "  PID $pidnum: $cmd"
+            found=1
+        fi
+    done
+    if [ "$found" -eq 0 ]; then
+        echo "  No processes currently holding /dev/hailo0"
+    fi
 else
     echo "⚠ WARNING: No Hailo device found at /dev/hailo0"
 fi

@@ -1,3 +1,7 @@
+## 2.0.28
+- Improved device usage diagnostic in run.sh to use /proc directly (portable, no dependency on fuser command) for better debugging of vdevice/Hailo device contention at startup.
+- Bumped to 2.0.28.
+
 ## 2.0.27
 - Added startup diagnostic in run.sh to log current users of /dev/hailo0 (via fuser) to help debug vdevice contention issues.
 - Bumped to 2.0.27.
