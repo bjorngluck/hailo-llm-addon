@@ -1081,7 +1081,11 @@ INDEX_HTML = r"""<!doctype html>
         if (err.name !== 'AbortError') {
           console.error('[send] generation error', err);
           if (!assistantMessage.content) {
-            assistantMessage.content = '[generation failed] ' + (err.message || 'see browser console and addon logs');
+            let msg = '[generation failed] ' + (err.message || 'see browser console and addon logs');
+            if (err.message && err.message.includes('hailo_backend_error')) {
+              msg += ' (check /api/logs for VDevice or model load errors)';
+            }
+            assistantMessage.content = msg;
           }
           renderMessages(chat);
         }
