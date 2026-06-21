@@ -1,3 +1,8 @@
+## 2.0.36
+- Removed deprecated `build.yaml` (HA Supervisor now warns about it; build params are in Dockerfile).
+- Cleaned `config.yaml`: removed `full_access: true` (was conflicting with explicit `devices:` list, causing supervisor validation warnings). Kept selective `devices` + `privileged` list for minimal access.
+- Bumped to 2.0.36.
+
 ## 2.0.35
 - Hardened Dockerfile: removed forgiving `|| true` on dpkg, added strict `set -e` verification that `hailo-ollama --help` works (build fails loudly on bad .deb install).
 - Improved run.sh: added NPU/Device Readiness Summary, host-side process check hints, better "not ready" diagnostics with actionable steps.
