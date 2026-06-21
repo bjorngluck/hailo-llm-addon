@@ -1,3 +1,10 @@
+## 2.0.35
+- Hardened Dockerfile: removed forgiving `|| true` on dpkg, added strict `set -e` verification that `hailo-ollama --help` works (build fails loudly on bad .deb install).
+- Improved run.sh: added NPU/Device Readiness Summary, host-side process check hints, better "not ready" diagnostics with actionable steps.
+- Better error surfacing in server.py `_proxy`: returns structured `hailo_backend_error` JSON for 4xx/5xx from the binary (e.g. VDevice failures).
+- Small JS chat UI improvement: detects `hailo_backend_error` and shows hint to check `/api/logs`.
+- Bumped to 2.0.35.
+
 ## 2.0.34
 - Improved device diagnostics in run.sh startup (added host-side check suggestions for VDevice "found: 0" errors).
 - Added both HAILO_OLLAMA_VDEVICE_GROUP_ID and HAILO_VDEVICE_GROUP_ID env for better compatibility with sharing.

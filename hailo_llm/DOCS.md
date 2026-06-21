@@ -60,7 +60,7 @@ To force the store to see the new version (when the upgrade button only shows th
 
 **Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
 
-- Your latest version bump (e.g. 2.0.34) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- Your latest version bump (e.g. 2.0.35) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
