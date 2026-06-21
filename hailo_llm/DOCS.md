@@ -82,10 +82,19 @@ If the addon does not appear in the store after adding the repo, or the build/in
    (The script removes old git clones, uninstalls variants, prunes docker images, and restarts supervisor.)
 3. Wait 60s, re-add the repo: `https://github.com/bjorngluck/hailo-llm-addon`
 4. Hard refresh browser.
-5. Build with `--no-cache`:
+5. After the script:
    ```bash
-   ha addon build --no-cache local_hailo_llm
-   ha addon install local_hailo_llm
+   # Check status
+   ha addon list | grep -i hailo
+
+   # Try updating (as recommended by supervisor)
+   ha addon update hailo_llm || true
+   ha addon update local_hailo_llm || true
+   ha addon update 7d290ede_hailo_llm || true
+
+   # If needed, clean build + install:
+   # ha addon build --no-cache local_hailo_llm
+   # ha addon install local_hailo_llm
    ```
 
 Common causes:
