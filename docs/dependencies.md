@@ -79,7 +79,7 @@ When upgrading any of the Hailo packages, the following must be re-validated:
 None are declared in the repository (no `requirements-dev.txt`). Typical local workflow:
 
 - Edit on any machine
-- Build the addon inside a HA dev environment or using `ha addon build`
+- Build the addon inside a HA dev environment or using `ha app build`
 - Test on real aarch64 hardware with a physical Hailo HAT (the binary and NPU access cannot be easily emulated)
 
 ## Image Size Considerations

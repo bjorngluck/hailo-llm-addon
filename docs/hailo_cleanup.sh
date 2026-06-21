@@ -11,9 +11,9 @@ rm -rf /data/apps/git/*hailo* 2>/dev/null || true
 
 # 2. Uninstall any variants
 echo "Uninstalling addon variants..."
-ha addon uninstall hailo_llm || true
-ha addon uninstall local_hailo_llm || true
-ha addon uninstall 7d290ede_hailo_llm || true
+ha app uninstall hailo_llm || true
+ha app uninstall local_hailo_llm || true
+ha app uninstall 7d290ede_hailo_llm || true
 
 # 3. Clean docker images
 echo "Cleaning docker images..."
@@ -27,15 +27,15 @@ ha supervisor restart
 echo ""
 echo "Wait 60 seconds, then run:"
 echo "  # Check current status"
-echo "  ha addon list | grep -i hailo"
+echo "  ha app list | grep -i hailo"
 echo ""
 echo "  # Try updating (recommended by supervisor for custom repos)"
-echo "  ha addon update hailo_llm || true"
-echo "  ha addon update local_hailo_llm || true"
-echo "  ha addon update 7d290ede_hailo_llm || true"
+echo "  ha app update hailo_llm || true"
+echo "  ha app update local_hailo_llm || true"
+echo "  ha app update 7d290ede_hailo_llm || true"
 echo ""
 echo "  # If update doesn't pull latest, fall back to clean build:"
-echo "  # ha addon build --no-cache local_hailo_llm"
-echo "  # ha addon install local_hailo_llm"
+echo "  # ha app build --no-cache local_hailo_llm"
+echo "  # ha app install local_hailo_llm"
 echo ""
 echo "=== Cleanup complete ==="

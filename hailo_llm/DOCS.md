@@ -1,7 +1,7 @@
 # Hailo LLM Documentation
 
 ## What's new in 2.0
-- Models are now **persistently stored** under `/data` inside the addon. Downloaded models survive `ha addon restart` and full HAOS reboots.
+- Models are now **persistently stored** under `/data` inside the addon. Downloaded models survive `ha app restart` and full HAOS reboots.
 - A full **modern interactive chat UI** (OpenWebUI-inspired) is served at the ingress root (`/`).
   - Sidebar with persistent chat history (new chat, rename, delete, switch).
   - Model selector + "Models" manager.
@@ -60,7 +60,7 @@ To force the store to see the new version (when the upgrade button only shows th
 
 **Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
 
-- Your latest version bump (e.g. 2.0.36) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- Your latest version bump (e.g. 2.0.37) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
@@ -85,22 +85,22 @@ If the addon does not appear in the store after adding the repo, or the build/in
 5. After the script:
    ```bash
    # Check status
-   ha addon list | grep -i hailo
+   ha app list | grep -i hailo
 
    # Try updating (as recommended by supervisor)
-   ha addon update hailo_llm || true
-   ha addon update local_hailo_llm || true
-   ha addon update 7d290ede_hailo_llm || true
+   ha app update hailo_llm || true
+   ha app update local_hailo_llm || true
+   ha app update 7d290ede_hailo_llm || true
 
    # If needed, clean build + install:
-   # ha addon build --no-cache local_hailo_llm
-   # ha addon install local_hailo_llm
+   # ha app build --no-cache local_hailo_llm
+   # ha app install local_hailo_llm
    ```
 
 Common causes:
 - Old cached git clone in `/data/apps/git/`
-- Deprecated `build.yaml` (we removed it in v2.0.36+)
-- Config conflict between `full_access: true` and explicit `devices:` (fixed in v2.0.36+)
+- Deprecated `build.yaml` (we removed it in v2.0.37+)
+- Config conflict between `full_access: true` and explicit `devices:` (fixed in v2.0.37+)
 - Supervisor state corruption from previous failed builds
 
 After install, check the addon logs for the "NPU / Device Readiness Summary".
@@ -111,7 +111,7 @@ After install, check the addon logs for the "NPU / Device Readiness Summary".
 - Logs are written to `/data/hailo-ollama.log` inside the addon (persistent and host-accessible).
 - How to view:
   - Install the community "Filebrowser" or "Studio Code Server" addon and browse the addon's data (or /media if you map it).
-  - From Terminal & SSH addon (or SSH to HA): `docker exec -it addon_hailo_llm tail -f /data/hailo-ollama.log` (container name is usually `addon_hailo_llm` or check `ha addons info hailo_llm`).
+  - From Terminal & SSH addon (or SSH to HA): `docker exec -it addon_hailo_llm tail -f /data/hailo-ollama.log` (container name is usually `addon_hailo_llm` or check `ha app info hailo_llm`).
   - In the addon logs (Settings → Add-ons → Hailo LLM → Log) you will also see some output because we tee the logs.
 - The startup script also dumps the last 30 lines if the backend doesn't become ready.
 

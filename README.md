@@ -2,7 +2,7 @@
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Addon-blue?logo=home-assistant)](https://www.home-assistant.io/)
 [![Architecture](https://img.shields.io/badge/arch-aarch64-green)](https://github.com/bjorngluck/hailo-llm-addon)
-[![Version](https://img.shields.io/badge/version-2.0.36-orange)](https://github.com/bjorngluck/hailo-llm-addon/releases)
+[![Version](https://img.shields.io/badge/version-2.0.37-orange)](https://github.com/bjorngluck/hailo-llm-addon/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Hailo-10H Model Zoo + Ollama-compatible LLM server with a beautiful built-in chat UI for Home Assistant.**
@@ -20,7 +20,7 @@ This addon turns your Home Assistant into a private, on-device AI assistant powe
   - Streaming responses, regenerate last answer, copy messages, edit & resend, stop generation
   - Modern dark design with keyboard support (Enter to send, Shift+Enter for newline)
 - **Persistent Storage**
-  - Downloaded models survive `ha addon restart` and full HAOS reboots
+  - Downloaded models survive `ha app restart` and full HAOS reboots
   - Chat history is stored server-side on the device
 - **Ollama-compatible Backend**
   - Full compatibility with Home Assistant conversation integrations, Open WebUI, and any Ollama client
@@ -126,7 +126,7 @@ You can inspect the files by opening a terminal into the running addon container
 **Models disappear after restart**
 - This should no longer happen in v2.0+. If it does, open an issue with addon logs.
 
-View detailed logs in the addon UI or via `ha addon logs hailo_llm`.
+View detailed logs in the addon UI or via `ha app logs hailo_llm`.
 
 ## 📚 Documentation
 

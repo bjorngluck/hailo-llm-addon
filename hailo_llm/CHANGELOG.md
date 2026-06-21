@@ -1,3 +1,7 @@
+## 2.0.37
+- Updated all HA CLI references from `ha addon` to `ha app` (supervisor command was updated in recent versions).
+- Bumped to 2.0.37.
+
 ## 2.0.36
 - Removed deprecated `build.yaml` (HA Supervisor now warns about it; build params are in Dockerfile).
 - Cleaned `config.yaml`: removed `full_access: true` (was conflicting with explicit `devices:` list, causing supervisor validation warnings). Kept selective `devices` + `privileged` list for minimal access.
