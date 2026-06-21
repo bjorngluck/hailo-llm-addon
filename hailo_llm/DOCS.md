@@ -64,9 +64,37 @@ To force the store to see the new version (when the upgrade button only shows th
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
-We also ship a `build.yaml` (matching patterns used by other Hailo-10H add-ons) to improve build compatibility.
-
 We provide both `repository.json` and `repository.yaml` for maximum compatibility with the Home Assistant addon store.
+
+**Note on build configuration:** We no longer use `build.yaml` (it is deprecated by Home Assistant Supervisor). All build parameters are now in the `Dockerfile` directly.
+
+## Troubleshooting Install & Build Issues
+
+If the addon does not appear in the store after adding the repo, or the build/install fails repeatedly:
+
+1. **Remove the repository** from Add-ons → Store → ⋮ → Repositories.
+2. Run the cleanup script (recommended):
+   ```bash
+   # Download and run the helper (or copy from docs/hailo_cleanup.sh in the repo)
+   curl -O https://raw.githubusercontent.com/bjorngluck/hailo-llm-addon/main/docs/hailo_cleanup.sh
+   bash hailo_cleanup.sh
+   ```
+   (The script removes old git clones, uninstalls variants, prunes docker images, and restarts supervisor.)
+3. Wait 60s, re-add the repo: `https://github.com/bjorngluck/hailo-llm-addon`
+4. Hard refresh browser.
+5. Build with `--no-cache`:
+   ```bash
+   ha addon build --no-cache local_hailo_llm
+   ha addon install local_hailo_llm
+   ```
+
+Common causes:
+- Old cached git clone in `/data/apps/git/`
+- Deprecated `build.yaml` (we removed it in v2.0.36+)
+- Config conflict between `full_access: true` and explicit `devices:` (fixed in v2.0.36+)
+- Supervisor state corruption from previous failed builds
+
+After install, check the addon logs for the "NPU / Device Readiness Summary".
 
 ## Troubleshooting Chat / API Issues
 
