@@ -207,6 +207,18 @@ def _proxy(to_path: str):
     except requests.RequestException as e:
         return jsonify({"error": "backend_unreachable", "detail": str(e)}), 502
 
+    # NEW: Surface binary errors clearly (especially model load failures)
+    if backend_resp.status_code >= 400:
+        try:
+            error_body = backend_resp.json()
+        except Exception:
+            error_body = {"raw": backend_resp.text[:500]}
+        return jsonify({
+            "error": "hailo_backend_error",
+            "status_code": backend_resp.status_code,
+            "detail": error_body
+        }), backend_resp.status_code
+
     def generate():
         try:
             for chunk in backend_resp.iter_content(chunk_size=8192):

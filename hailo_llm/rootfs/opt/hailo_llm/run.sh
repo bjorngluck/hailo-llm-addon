@@ -101,6 +101,20 @@ else
     echo "⚠ WARNING: No Hailo device found at /dev/hailo0"
 fi
 
+# === Enhanced device & NPU readiness summary ===
+echo ""
+echo "=== NPU / Device Readiness Summary ==="
+if [ -e /dev/hailo0 ]; then
+    echo "✓ /dev/hailo0 present inside container"
+else
+    echo "✗ /dev/hailo0 MISSING inside container — check config.yaml devices + privileged mode"
+fi
+
+echo ""
+echo "Checking host-side processes holding the Hailo device (run this on host too):"
+echo "  sudo lsof /dev/hailo0 || sudo fuser -v /dev/hailo0"
+echo ""
+
 # === Check for hailo-ollama binary ===
 if ! command -v hailo-ollama >/dev/null 2>&1; then
     echo ""
@@ -158,10 +172,16 @@ for i in $(seq 1 45); do
 done
 
 if [ "$READY" -ne 1 ]; then
-    echo "⚠ hailo-ollama did not become ready in time. Check /data/hailo-ollama.log"
-    echo "=== Last lines of hailo-ollama.log ==="
-    tail -30 /data/hailo-ollama.log 2>/dev/null || true
-    # We still continue — the UI can surface the error
+    echo "⚠ hailo-ollama did NOT become ready in 45s"
+    echo "=== Last 50 lines of hailo-ollama.log ==="
+    tail -50 /data/hailo-ollama.log 2>/dev/null || true
+    echo ""
+    echo "Common causes:"
+    echo "  - No /dev/hailo0 or device busy on HOST"
+    echo "  - VDevice creation failed (see log for 'VDevice' or 'found: 0')"
+    echo "  - Missing libs or broken .deb install"
+    echo ""
+    echo "Next steps: Check host with 'sudo fuser -v /dev/hailo0', then restart addon"
 fi
 
 echo "Starting web UI (Flask on 5000) + nginx on 8000 proxying to binary (to match official direct binary on 8000 for API + custom UI)"
