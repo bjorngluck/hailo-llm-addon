@@ -1,3 +1,7 @@
+## 2.0.38
+- Improved Dockerfile build reliability and observability for HA Supervisor builds (especially on Pi 5): added numbered progress steps (`>>> [1/5]` etc), `set -ex` tracing, `dpkg ... || true` + `apt-get install -f` pattern, lighter `hailo-ollama --version` verification (replaced heavier `--help > /dev/null` + fatal block with ls). Full /tmp/packages cleanup. The .whl is left in packages/ but not installed (intentional; not in requirements).
+- Bumped to 2.0.38.
+
 ## 2.0.37
 - Updated all HA CLI references from `ha addon` to `ha app` (supervisor command was updated in recent versions).
 - Bumped to 2.0.37.
