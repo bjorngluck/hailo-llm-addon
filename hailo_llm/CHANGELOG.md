@@ -1,3 +1,7 @@
+## 2.0.39
+- Simplified Dockerfile back to minimal/fast style (like older ~20s builds that worked): removed all verification/echo/set -ex blocks. Uses simple chained `dpkg || true && apt install -f && ldconfig` with cleanup. Dropped unused base packages (gnupg, setuptools, virtualenv) for smaller layer.
+- Bumped to 2.0.39.
+
 ## 2.0.38
 - Improved Dockerfile build reliability and observability for HA Supervisor builds (especially on Pi 5): added numbered progress steps (`>>> [1/5]` etc), `set -ex` tracing, `dpkg ... || true` + `apt-get install -f` pattern, lighter `hailo-ollama --version` verification (replaced heavier `--help > /dev/null` + fatal block with ls). Full /tmp/packages cleanup. The .whl is left in packages/ but not installed (intentional; not in requirements).
 - Bumped to 2.0.38.
