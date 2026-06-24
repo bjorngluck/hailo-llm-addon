@@ -72,6 +72,16 @@ echo "Blob dir (HEFs): $BLOB_DIR"
 echo "Hailo-ollama logs: /data/hailo-ollama.log (visible in HA Terminal/SSH or Filebrowser)"
 echo "$MEDIA_BASE/hailo-ollama contents:"
 ls -la "$MEDIA_BASE/hailo-ollama" 2>/dev/null | head -10 || echo "  (empty)"
+
+# Force device permissions early - this often helps when running under HA supervisor
+# even with full_access + privileged. Stock docker on Ubuntu host usually has looser perms.
+for dev in /dev/hailo* /dev/h1x*; do
+  if [ -e "$dev" ]; then
+    chmod 666 "$dev" 2>/dev/null || true
+    echo "Set 666 on $dev"
+  fi
+done
+udevadm trigger --subsystem-match=char 2>/dev/null || true
 echo "Manifests (package + copy):"
 ls -la "$MEDIA_BASE/hailo-ollama/models/manifests" 2>/dev/null | head -5 || echo "  (see /usr/share/hailo-ollama/models/manifests)"
 echo "Blob samples (HEF content):"

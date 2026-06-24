@@ -1,3 +1,7 @@
+## 2.0.48
+- Added aggressive device permission fix at startup (chmod 666 /dev/hailo* /dev/h1x* and udev trigger). This often makes the difference between "found: 0" in HAOS container vs working stock binary on plain Ubuntu host (where permissions are looser by default).
+- Bumped to 2.0.48.
+
 ## 2.0.47
 - Diagnostics (device ls, capabilities, hailortcli scan, open tests) are now also appended to /data/hailo-ollama.log so they are visible in /api/logs and the UI Log tab even when you don't have easy `docker exec` access from core-ssh.
 - Bumped to 2.0.47.
