@@ -1,3 +1,8 @@
+## 2.0.49
+- Switched to `privileged: true` (full privileged) to better match stock docker runs on Ubuntu host that worked for you. Combined with full_access and devices list.
+- Added even more early device visibility logging to the hailo log.
+- Bumped to 2.0.49.
+
 ## 2.0.48
 - Added aggressive device permission fix at startup (chmod 666 /dev/hailo* /dev/h1x* and udev trigger). This often makes the difference between "found: 0" in HAOS container vs working stock binary on plain Ubuntu host (where permissions are looser by default).
 - Bumped to 2.0.48.

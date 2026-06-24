@@ -18,6 +18,27 @@ echo "Models (HEF blobs): persisted via XDG_DATA_HOME under /media/hailo_llm (ho
 echo "Auto-download:     $AUTO_DOWNLOAD"
 echo "=========================================="
 
+# Always log device state to the hailo log file so it's visible even without docker access
+{
+  echo ""
+  echo "=== Early device visibility (at script start) ==="
+  echo "Date: $(date)"
+  echo "Devices visible:"
+  ls -l /dev/hailo* /dev/h1x* 2>/dev/null || echo "  NO hailo or h1x devices found in /dev"
+  echo "Trying to open devices:"
+  for d in /dev/hailo0 /dev/h1x-0; do
+    if [ -e "$d" ]; then
+      if python3 -c "open('$d','rb').close()" 2>/dev/null; then
+        echo "  ✓ Can open $d"
+      else
+        echo "  ✗ Cannot open $d (permission or other error)"
+      fi
+    fi
+  done
+  echo "Hailort cli scan (if available):"
+  which hailortcli && hailortcli scan 2>&1 || echo "  hailortcli not in PATH"
+} >> /data/hailo-ollama.log 2>/dev/null || true
+
 # Chats (small) stay in private addon /data
 mkdir -p /data/chats
 

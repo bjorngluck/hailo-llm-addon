@@ -1,6 +1,6 @@
 name: "Hailo LLM"
 description: "Hailo-10H Model Zoo + Ollama LLM server"
-version: "2.0.48"
+version: "2.0.49"
 slug: "hailo_llm"
 url: "https://github.com/bjorngluck/hailo-llm-addon"
 arch:
@@ -17,8 +17,7 @@ devices:
   - "/dev/h1x-0"
   - "/dev/hailo0"
 full_access: true
-privileged:
-  - SYS_RAWIO
+privileged: true
 apparmor: false
 timeout: 300
 ports:
