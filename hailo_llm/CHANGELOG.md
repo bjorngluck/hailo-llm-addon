@@ -1,3 +1,7 @@
+## 2.0.43
+- Improved cleanup script and docs for cases where new versions (or the addon itself) do not appear in the store or no update is offered. Added more aggressive git clone removal (including /data/addons/git/), ha store reload, supervisor repair, broader uninstall commands.
+- Bumped to 2.0.43 (to help force cache invalidation after repo refresh).
+
 ## 2.0.42
 - Match other Hailo examples: run with full `privileged: true` (instead of selective SYS_RAWIO capabilities list) + protection mode disabled (`apparmor: false`). This aligns container privileges closer to official hailo-ollama Docker usage (`--privileged` + device access) for better VDevice/NPU reliability.
 - Bumped to 2.0.42.

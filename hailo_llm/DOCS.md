@@ -50,17 +50,23 @@ The "Update" button in the Add-on Store can sometimes be greyed out because:
 - For local/Git add-ons the store "Update" detection is not always immediate.
 - Version comparison uses the `version` field in `config.yaml`.
 
-To force the store to see the new version (when the upgrade button only shows the current/old version):
+To force the store to see the new version (when it doesn't appear, or the button only shows the old version):
 1. Add-ons → Add-on Store → ⋮ (top right) → Repositories.
 2. Click the refresh icon (circular arrows) next to your "Bjorngluck Hailo Add-ons" repository.
-3. If still not showing, remove the repository completely, then re-add it using the exact URL: `https://github.com/bjorngluck/hailo-llm-addon`
-4. Wait 30 seconds, then hard-refresh your browser (Ctrl+Shift+R).
-5. On the installed Hailo LLM addon page, use the **⋯** menu → **Rebuild** (this often works even when the store "Update" button is grey or only shows the current version).
-6. As a last resort: restart the Supervisor (`ha supervisor restart` in SSH or Terminal addon) or restart Home Assistant entirely.
+3. If the new version (e.g. 2.0.42) still does not show:
+   - Remove the repository completely.
+   - Re-add it using the **exact** URL: `https://github.com/bjorngluck/hailo-llm-addon`
+4. Wait 30–60 seconds.
+5. Hard-refresh your browser (Ctrl+Shift+R or Cmd+Shift+R).
+6. The **Hailo LLM** addon should now appear in the store with the latest version.
+7. If already installed an older version: go to the addon page → ⋯ → **Rebuild**.
+8. Last resort: `ha supervisor restart` (from Terminal/SSH addon).
+
+**For brand new installs or when the addon refuses to appear/selectable at all** — use the cleanup script below first.
 
 **Critical for Git-based repos:** Home Assistant's Add-on Store always clones the repository's **default branch** (currently `main` for this repo). 
 
-- Your latest version bump (e.g. 2.0.37) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
+- Your latest version bump (e.g. 2.0.42) and changes must be present on `main` (not just a feature branch like `model-storage-and-interactive-feature`).
 - After pushing to `main`, refresh the repo in the store (see above).
 - For active development on a feature branch, the most reliable method is to update your source, then on the installed **Hailo LLM** add-on page use the **⋯** menu → **Rebuild**.
 
@@ -84,24 +90,35 @@ If the addon does not appear in the store after adding the repo, or the build/in
 4. Hard refresh browser.
 5. After the script:
    ```bash
-   # Check status
    ha app list | grep -i hailo
+   ha addon list | grep -i hailo
 
-   # Try updating (as recommended by supervisor)
    ha app update hailo_llm || true
-   ha app update local_hailo_llm || true
-   ha app update 7d290ede_hailo_llm || true
+   ha addon update hailo_llm || true
+   ```
 
-   # If needed, clean build + install:
-   # ha app build --no-cache local_hailo_llm
+   Or in UI: use **Rebuild** on the addon page.
+
+   For clean (re)install if still no version shown:
+   ```bash
+   # ha app build --no-cache local_hailo_llm || true
    # ha app install local_hailo_llm
    ```
 
 Common causes:
-- Old cached git clone in `/data/apps/git/`
+- Old cached git clone in `/data/apps/git/` or `/data/addons/git/`
+- Supervisor/Store cache not invalidated (use cleanup + remove/re-add repo)
 - Deprecated `build.yaml` (we removed it in v2.0.37+)
 - Config conflict between `full_access: true` and explicit `devices:` (fixed in v2.0.37+)
-- Supervisor state corruption from previous failed builds
+- Supervisor state corruption from previous failed builds/installs
+
+Additional CLI to force refresh:
+```bash
+ha supervisor reload
+ha supervisor repair
+ha store reload
+ha supervisor restart
+```
 
 After install, check the addon logs for the "NPU / Device Readiness Summary".
 
