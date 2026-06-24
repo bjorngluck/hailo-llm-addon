@@ -1,3 +1,7 @@
+## 2.0.44
+- Reverted the `privileged: true` change (back to selective `privileged: [SYS_RAWIO]` list, keeping `apparmor: false` and the devices list). Full privileged mode appeared to be blocking the addon from appearing as a selectable new install or update in the HA Add-on Store.
+- Bumped to 2.0.44.
+
 ## 2.0.43
 - Improved cleanup script and docs for cases where new versions (or the addon itself) do not appear in the store or no update is offered. Added more aggressive git clone removal (including /data/addons/git/), ha store reload, supervisor repair, broader uninstall commands.
 - Bumped to 2.0.43 (to help force cache invalidation after repo refresh).
