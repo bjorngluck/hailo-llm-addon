@@ -1,3 +1,7 @@
+## 2.0.45
+- Added `full_access: true` (in addition to devices list + `privileged: [SYS_RAWIO]` + `apparmor: false`) to match working Hailo addon examples such as https://github.com/mikehailodev/hailo-vlm-addon. This gives broader device access to help resolve "Failed to create VDevice" (status 74).
+- Bumped to 2.0.45.
+
 ## 2.0.44
 - Reverted the `privileged: true` change (back to selective `privileged: [SYS_RAWIO]` list, keeping `apparmor: false` and the devices list). Full privileged mode appeared to be blocking the addon from appearing as a selectable new install or update in the HA Add-on Store.
 - Bumped to 2.0.44.
