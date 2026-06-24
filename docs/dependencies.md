@@ -17,9 +17,9 @@ This document lists all dependencies of the Hailo LLM addon, grouped by layer, w
 - `tini` — (already in base) lightweight init for zombie reaping and signal forwarding
 
 **Hailo Official Packages** (installed from vendored `.deb` and `.whl` in `packages/`)
-- `hailort_5.3.0_arm64.deb` — Hailo Runtime (HailoRT). Low-level driver and API for the Hailo-10H NPU.
-- `hailo_gen_ai_model_zoo_5.3.0_arm64.deb` — Provides the `hailo-ollama` binary (the core inference server) and pre-compiled HEF models / conversion tools.
-- `hailort-5.3.0-cp311-cp311-linux_aarch64.whl` — Python bindings for HailoRT (installed even though the current implementation primarily uses the binary; kept for future extensibility or tooling).
+- `hailort_5.2.0_arm64.deb` — Hailo Runtime (HailoRT). Low-level driver and API for the Hailo-10H NPU. (Switched to 5.2.0 to match the host kernel driver version on the user's Raspberry Pi 5 setup.)
+- `hailo_gen_ai_model_zoo_5.2.0_arm64.deb` — Provides the `hailo-ollama` binary (the core inference server) and pre-compiled HEF models / conversion tools.
+- `hailort-5.2.0-cp311-cp311-linux_aarch64.whl` — Python bindings for HailoRT (kept for reference; not installed in the current minimal Dockerfile).
 
 **Cleanup**
 - After installation the temporary package files are removed to keep the image small.
@@ -55,7 +55,7 @@ Installed with `--break-system-packages` inside the Debian image.
 
 ## Why These Choices?
 
-- **Pinned Hailo 5.3.0 stack** — Provides a known-good, tested combination of runtime + model zoo + `hailo-ollama` binary. Upgrades have historically caused model wipes or ABI issues in the community; pinning reduces risk.
+- **Pinned Hailo 5.2.0 stack** — Switched from 5.3.0 to 5.2.0 specifically to match the host driver's version on the Raspberry Pi 5 + Hailo HAT+ 2. Mismatches between kernel driver and userspace HailoRT commonly cause "HAILO_OUT_OF_PHYSICAL_DEVICES (74) / found: 0" VDevice errors.
 - **Flask instead of a heavier framework or separate web server** — Extremely small footprint. The entire UI is delivered as one self-contained HTML page (Tailwind via CDN + vanilla JS). No Node.js build step is required.
 - **Proxy pattern** — Keeps us dependent on the official binary for best performance and model compatibility while still allowing us to own the user-facing port for the UI.
 - **File-based persistence** — No SQLite or external database. Simple, robust, and perfectly aligned with HA addon `/data` semantics.
@@ -63,10 +63,10 @@ Installed with `--break-system-packages` inside the Debian image.
 
 ## Version Matrix (Current)
 
-- HailoRT: 5.3.0
-- hailo_gen_ai_model_zoo: 5.3.0
+- HailoRT: 5.2.0 (userspace matched to host kernel driver)
+- hailo_gen_ai_model_zoo: 5.2.0
 - Base OS: Debian bookworm (aarch64)
-- Python: 3.11 (from the wheel and base image)
+- Python: 3.11 (from the base image)
 
 When upgrading any of the Hailo packages, the following must be re-validated:
 - Binary location and startup behavior

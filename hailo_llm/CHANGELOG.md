@@ -1,3 +1,8 @@
+## 2.0.50
+- Switched Hailo packages to 5.2.0 (hailort_5.2.0_arm64.deb + hailo_gen_ai_model_zoo_5.2.0_arm64.deb) to match the kernel driver version on the host. Version mismatch between host driver and container userspace is a common cause of "HAILO_OUT_OF_PHYSICAL_DEVICES (74) / found: 0".
+- Updated docs/dependencies.md accordingly.
+- Bumped to 2.0.50.
+
 ## 2.0.49
 - Switched to `privileged: true` (full privileged) to better match stock docker runs on Ubuntu host that worked for you. Combined with full_access and devices list.
 - Added even more early device visibility logging to the hailo log.
