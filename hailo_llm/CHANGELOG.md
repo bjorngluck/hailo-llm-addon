@@ -1,3 +1,7 @@
+## 2.0.46
+- Added `hailortcli scan` to startup diagnostics (in the "NPU / Device Readiness Summary") so we can see exactly what HailoRT sees for devices from inside the container.
+- Bumped to 2.0.46.
+
 ## 2.0.45
 - Added `full_access: true` (in addition to devices list + `privileged: [SYS_RAWIO]` + `apparmor: false`) to match working Hailo addon examples such as https://github.com/mikehailodev/hailo-vlm-addon. This gives broader device access to help resolve "Failed to create VDevice" (status 74).
 - Bumped to 2.0.45.
