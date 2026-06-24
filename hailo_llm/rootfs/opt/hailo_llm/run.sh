@@ -74,6 +74,19 @@ if [ -d /usr/share/hailo-ollama/models/manifests ]; then
   cp -a --no-clobber /usr/share/hailo-ollama/models/manifests/* "$MEDIA_BASE/hailo-ollama/models/manifests/" 2>/dev/null || true
 fi
 
+# When switching Hailo package versions (e.g. 5.3 -> 5.2 to match host driver), previously pulled model
+# manifests may have incompatible JSON structure (e.g. missing 'template_params'). Clean stale pulled data
+# so the new binary can start cleanly. Package manifests are preserved.
+if [ -d "$MEDIA_BASE/hailo-ollama/models/manifests" ]; then
+  # Remove user-pulled model folders (the package ones from /usr/share are copied below)
+  find "$MEDIA_BASE/hailo-ollama/models/manifests" -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} + 2>/dev/null || true
+fi
+if [ -d "$BLOB_DIR" ]; then
+  # Blobs from previous version will cause the new binary to crash on load with JSON errors
+  rm -rf "$BLOB_DIR"/* 2>/dev/null || true
+fi
+echo "[persistence] Cleaned model data from previous Hailo package version to avoid manifest incompatibility (e.g. missing 'template_params')."
+
 # Optional legacy/cache redirections (harmless)
 mkdir -p /root/.ollama /root/.cache
 ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || true

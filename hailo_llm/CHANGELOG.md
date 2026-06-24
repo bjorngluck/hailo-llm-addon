@@ -1,6 +1,7 @@
 ## 2.0.51
 - Reverted `privileged` in config.yaml back to list form (`privileged: [SYS_RAWIO]`) while retaining `full_access: true` and the devices list. This matches the config style in the referenced working hailo-vlm-addon and avoids the supervisor validation conflicts/warnings that full_access + devices + full privileged: true had caused in earlier versions (see 2.0.36 notes).
 - Bumped to 2.0.51 to ensure the corrected config is picked up.
+- Enhanced model data cleanup in run.sh on startup to handle package version switches (e.g. 5.3->5.2). Removes old user-pulled manifests/blobs that can cause JSON parse crashes like missing 'template_params' in the new binary. Rebuild and restart to clean stale data.
 
 ## 2.0.50
 - Switched Hailo packages to 5.2.0 (hailort_5.2.0_arm64.deb + hailo_gen_ai_model_zoo_5.2.0_arm64.deb) to match the kernel driver version on the host. Version mismatch between host driver and container userspace is a common cause of "HAILO_OUT_OF_PHYSICAL_DEVICES (74) / found: 0".
