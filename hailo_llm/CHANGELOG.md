@@ -1,3 +1,7 @@
+## 2.0.42
+- Match other Hailo examples: run with full `privileged: true` (instead of selective SYS_RAWIO capabilities list) + protection mode disabled (`apparmor: false`). This aligns container privileges closer to official hailo-ollama Docker usage (`--privileged` + device access) for better VDevice/NPU reliability.
+- Bumped to 2.0.42.
+
 ## 2.0.41
 - "LLM not loaded" fix for chat: automatically prime/load the model using a minimal /api/generate call immediately after pull and before every /api/chat send. This forces the backend to initialize the LLM runtime (HEF + VDevice) so subsequent chat works.
 - Cleaned chat payload (removed "options": {}) — oatpp backend is strict; minimal payloads are more reliable (matches the clean curls that reach the binary).

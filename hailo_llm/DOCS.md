@@ -196,6 +196,9 @@ docker exec -it addon_hailo_llm curl -s -X POST http://127.0.0.1:11434/api/chat 
 - **Direct curls on :11434 give good tokens** but UI chat (8000) does not → problem is nginx proxy, HA ingress buffering, or the JS reader in the embedded UI (`server.py`).
 - **Direct :11434 chat also gives empty / no usable response** → problem is in `hailo-ollama` (look at `/data/hailo-ollama.log` for generation/VDevice errors during the `/api/chat` call).
 - `/api/tags` and `/api/pull` work but chat does not → chat-specific response format difference or generation issue on the model.
+- "LLM not loaded" (500) → model is on disk but not initialized in the runtime. The addon now auto-primes with /api/generate after pull and before chat. Also try:
+  `curl ... /api/ps` (shows loaded models)
+  `curl -X POST ... /api/generate ...` (alternative that can load the LLM)
 
 ### 3. Other quick checks
 - Make sure a model is pulled (use the Models button in UI or the pull curl above).
