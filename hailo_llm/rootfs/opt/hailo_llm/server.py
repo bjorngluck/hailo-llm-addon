@@ -631,6 +631,7 @@ INDEX_HTML = r"""<!doctype html>
       <div class="mb-4">
         <div class="uppercase text-xs tracking-wider text-zinc-500 mb-2 px-1">Installed</div>
         <div id="installed-models" class="space-y-1 text-sm"></div>
+        <div id="loaded-note" class="text-[10px] text-emerald-400 px-1 mt-1"></div>
       </div>
 
       <!-- Download curated -->
@@ -993,6 +994,9 @@ INDEX_HTML = r"""<!doctype html>
 
       console.log('[send] starting /api/chat for model', currentModel || chat.model, 'with', chat.messages.length - 1, 'messages to backend');
 
+      // Make sure the LLM is loaded before the real chat (handles "LLM not loaded" from backend)
+      await primeModel(currentModel || chat.model);
+
       try {
         const res = await fetch(INGRESS_BASE + 'api/chat', {
           method: 'POST',
@@ -1000,8 +1004,7 @@ INDEX_HTML = r"""<!doctype html>
           body: JSON.stringify({
             model: currentModel || chat.model,
             messages: chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })), // exclude the empty stub
-            stream: true,   // prefer stream for robustness through proxy/ingress
-            options: {}
+            stream: true   // keep minimal payload - oatpp backend is strict about extra fields
           }),
           signal: abortController.signal
         });
@@ -1139,6 +1142,7 @@ INDEX_HTML = r"""<!doctype html>
       const modal = $('#model-modal');
       modal.style.display = 'flex';
       refreshInstalledModels();
+      refreshLoadedModels();
       renderCuratedModels();
       $('#pull-progress').classList.add('hidden');
     }
@@ -1175,6 +1179,20 @@ INDEX_HTML = r"""<!doctype html>
       } catch (e) {
         container.innerHTML = '<div class="text-xs text-amber-400 px-1">Backend starting or no models yet. Use the recommended buttons or pull one.</div>';
       }
+    }
+
+    async function refreshLoadedModels() {
+      // /api/ps shows models currently loaded into the LLM runtime (fixes "LLM not loaded" visibility)
+      try {
+        const res = await fetch(INGRESS_BASE + 'api/ps');
+        if (!res.ok) return;
+        const data = await res.json();
+        const loaded = (data.models || data || []).map(m => m.name || m.model).filter(Boolean);
+        const note = document.getElementById('loaded-note');
+        if (note) {
+          note.textContent = loaded.length ? 'Loaded: ' + loaded.join(', ') : 'No LLM currently loaded (will prime on first chat)';
+        }
+      } catch (e) {}
     }
 
     function renderCuratedModels() {
@@ -1258,6 +1276,10 @@ INDEX_HTML = r"""<!doctype html>
         if (barEl) barEl.style.width = '100%';
         await refreshInstalledModels();
         await loadModelsIntoSelect();
+        // Prime / load the LLM into memory (the backend sometimes requires an initial
+        // generate or chat to move from "downloaded" to "LLM loaded" state).
+        // This prevents the "LLM not loaded" 500 on the first real chat.
+        primeModel(name);
       } catch (e) {
         progress.innerHTML += `<div class="text-rose-400">Error: ${e.message}</div>`;
       } finally {
@@ -1272,6 +1294,24 @@ INDEX_HTML = r"""<!doctype html>
       if (!name) return;
       await pullModel(name);
       input.value = '';
+    }
+
+    async function primeModel(model) {
+      if (!model) return;
+      console.log('[prime] attempting to load LLM for', model, '(to avoid "LLM not loaded" error)');
+      try {
+        // Use a minimal generate request. This often forces the backend to initialize
+        // the LLM runtime / VDevice + HEF for the model. Chat will then succeed.
+        const res = await fetch(INGRESS_BASE + 'api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, prompt: ' ', stream: false })
+        });
+        console.log('[prime] generate status', res.status);
+        // We don't care much about the result; the side effect is loading the model.
+      } catch (e) {
+        console.warn('[prime] failed', e);
+      }
     }
 
     async function deleteModel(name, btn) {
