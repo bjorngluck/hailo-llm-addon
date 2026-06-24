@@ -972,13 +972,15 @@ INDEX_HTML = r"""<!doctype html>
 
       abortController = new AbortController();
 
-      // helper: tolerant content extraction (handles hailo/ollama variants)
+      // helper: tolerant content extraction (handles hailo/ollama variants + common alternatives)
       function extractToken(obj) {
         if (!obj) return '';
         if (obj.message && typeof obj.message.content === 'string') return obj.message.content;
         if (typeof obj.content === 'string') return obj.content;
         if (typeof obj.response === 'string') return obj.response;
         if (obj.delta && typeof obj.delta.content === 'string') return obj.delta.content;
+        if (obj.message && typeof obj.message === 'string') return obj.message; // rare
+        if (obj.text && typeof obj.text === 'string') return obj.text;
         if (obj.error) return '[error] ' + (obj.error.message || obj.error || '');
         return '';
       }
@@ -1046,17 +1048,17 @@ INDEX_HTML = r"""<!doctype html>
                 if (!line.trim()) continue;
                 try {
                   const obj = JSON.parse(line);
-                  // Log a few chunks so user can see in console exactly what comes back
-                  if (obj.message && obj.message.content) {
-                    console.log('[send chunk]', obj.message.content);
-                  } else {
-                    console.log('[send chunk]', obj);
-                  }
+                  // Log EVERY chunk for debugging what the native backend actually returns
+                  console.log('[send raw chunk]', obj);
+
                   const tok = extractToken(obj);
                   if (tok) {
                     assistantMessage.content += tok;
                     gotContent = true;
                     renderMessages(chat);   // live update as tokens arrive
+                  } else if (obj) {
+                    // Helpful: if we get objects but no text token, surface it
+                    console.warn('[send] chunk had no extractable token. keys=', Object.keys(obj));
                   }
                   if (obj.done === true) {
                     console.log('[send] done=true received');

@@ -1,3 +1,9 @@
+## 2.0.40
+- Expose native hailo-ollama directly on 0.0.0.0:11434 (bind address change + port declaration in config.yaml). This lets you map the port and test `/api/chat` with plain curl, completely bypassing nginx + HA ingress + Flask proxy + UI JS. Great for ruling out proxy problems when chat gives "no usable response" while model loading works.
+- Improved JS chat streaming diagnostics: log every raw chunk from `/api/chat` + more tolerant token extraction + warnings when chunks arrive with no text.
+- Updated DOCS.md with clear "use native port 11434" test flow + interpretation guide.
+- Bumped to 2.0.40.
+
 ## 2.0.39
 - Simplified Dockerfile back to minimal/fast style (like older ~20s builds that worked): removed all verification/echo/set -ex blocks. Uses simple chained `dpkg || true && apt install -f && ldconfig` with cleanup. Dropped unused base packages (gnupg, setuptools, virtualenv) for smaller layer.
 - Bumped to 2.0.39.

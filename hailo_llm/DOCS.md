@@ -116,23 +116,22 @@ After install, check the addon logs for the "NPU / Device Readiness Summary".
 - The startup script also dumps the last 30 lines if the backend doesn't become ready.
 
 ### 2. Test curl commands (bypass UI / ingress buffering issues)
-Use these to verify the backend works independently of the web UI, HA ingress, or the Flask proxy.
 
-**Prerequisites**
-- Expose port 8000 on the addon (in the addon config → Network → 8000/tcp → 8000) or use the host IP where the addon is running.
-- Set `HOST=http://YOUR-HA-IP:8000` (or localhost if testing from inside HA).
+**Best way to rule out the proxy / nginx / ingress / custom UI entirely:**
+
+Since v2.0.39+ the native `hailo-ollama` binds to `0.0.0.0:11434`.
+
+1. In the addon page → **Network** tab, make sure a host port is mapped for 11434 (e.g. `11434` → container `11434`).
+2. Use the **native** address for testing:
 
 ```bash
-# 1. Basic health (addon proxy + backend reachability)
-curl -s $HOST/health | jq
+# Use the host-mapped native port (bypasses nginx + Flask + HA ingress completely)
+HOST=http://YOUR-HA-IP:11434
 
-# 2. List available models (proxied to hailo-ollama)
+# Basic list
 curl -s $HOST/api/tags | jq
 
-# 3. List via hailo native endpoint
-curl -s $HOST/hailo/v1/list | jq
-
-# 4. Simple non-streaming chat (easiest for debugging full response)
+# Simple non-streaming chat — easiest for debugging "no usable response"
 curl -s -X POST $HOST/api/chat \
   -H "Content-Type: application/json" \
   -d '{
@@ -141,37 +140,62 @@ curl -s -X POST $HOST/api/chat \
     "stream": false
   }' | jq
 
-# 5. Streaming chat (NDJSON - what the UI uses under the hood)
+# Streaming chat (raw NDJSON)
 curl -N --no-buffer -s -X POST $HOST/api/chat \
   -H "Content-Type: application/json" \
   -d '{
     "model": "qwen2.5:1.5b",
-    "messages": [{"role": "user", "content": "Count to 5 slowly."}],
+    "messages": [{"role": "user", "content": "Count to 3 slowly."}],
     "stream": true
   }' | while IFS= read -r line; do
-    if [ -n "$line" ]; then
-      echo "$line" | jq -r '.message.content // .response // empty' 2>/dev/null || echo "$line"
-    fi
+    if [ -n "$line" ]; then echo "$line"; fi
   done
+```
 
-# 6. Test the UI's chat persistence endpoints (the /api/chats used by the embedded SPA)
+If the **direct** curls to `:11434` return proper responses/tokens but the in-UI chat (on port 8000) does not, then the problem is in the nginx proxy, HA ingress, or the JavaScript streaming reader in the UI.
+
+If direct `:11434` chat also gives empty / bad responses, the issue is in hailo-ollama itself (check `/data/hailo-ollama.log` or VDevice during generation).
+
+---
+
+**Other curls (via the normal addon port 8000 / ingress — still useful)**
+
+**Prerequisites**
+- Expose port 8000 (or use the ingress URL).
+- Set `HOST=http://YOUR-HA-IP:8000` (the proxied surface).
+
+```bash
+# 1. Basic health (addon proxy + backend reachability via 8000)
+curl -s $HOST/health | jq
+
+# 2. List models (via the proxied surface)
+curl -s $HOST/api/tags | jq
+
+# 3. UI chat persistence (Flask only)
 curl -s $HOST/api/chats | jq
 
-# 7. Hailo backend logs (last 100 lines) - super useful for troubleshooting chat
+# 4. Hailo backend logs
 curl -s $HOST/api/logs | jq -r .log
 
-# 8. Device holders check (call this right after a failed chat)
+# 5. Device holders check (after a bad chat response)
 curl -s $HOST/api/debug/device | jq
 ```
 
-**Direct backend test (from inside the container, e.g. via docker exec or Terminal addon)**
+**Direct backend test (from inside the container — always uses native 11434)**
 ```bash
 docker exec -it addon_hailo_llm curl -s http://127.0.0.1:11434/api/tags | jq
+
+# Direct non-stream chat test bypassing everything
+docker exec -it addon_hailo_llm curl -s -X POST http://127.0.0.1:11434/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen2.5:1.5b","messages":[{"role":"user","content":"hi"}],"stream":false}' | jq
 ```
 
-If these curls return proper JSON / tokens but the UI chat is broken, the problem is in the web UI (server.py INDEX_HTML JS) or ingress buffering.
+### How to interpret results
 
-If curls fail or return errors, the issue is with hailo-ollama itself (check /data/hailo-ollama.log) or the proxy in server.py.
+- **Direct curls on :11434 give good tokens** but UI chat (8000) does not → problem is nginx proxy, HA ingress buffering, or the JS reader in the embedded UI (`server.py`).
+- **Direct :11434 chat also gives empty / no usable response** → problem is in `hailo-ollama` (look at `/data/hailo-ollama.log` for generation/VDevice errors during the `/api/chat` call).
+- `/api/tags` and `/api/pull` work but chat does not → chat-specific response format difference or generation issue on the model.
 
 ### 3. Other quick checks
 - Make sure a model is pulled (use the Models button in UI or the pull curl above).

@@ -137,21 +137,25 @@ fi
 mkdir -p "$BLOB_DIR" /root/.ollama
 ln -sfn "$MEDIA_BASE/hailo-ollama/models" /root/.ollama/models 2>/dev/null || true
 
-# === Launch the inference binary on an INTERNAL port only ===
-# We run the real hailo-ollama on 11434 (localhost) and put a Python layer
-# (Flask UI + thin proxy) on the ingress port 8000.
+# === Launch the inference binary ===
+# hailo-ollama listens on 11434.
+# - For the custom UI + persistence we proxy through nginx (port 8000) + Flask.
+# - We now bind to 0.0.0.0 so the native port can be directly exposed (via the
+#   addon's "Network" port mapping) for testing and external clients.
+#   This makes it easy to rule out the nginx/ingress/Flask proxy layer.
 #
-# Persistence is achieved by XDG_DATA_HOME (controls data_home() -> blob dir).
-# Note: hailo-ollama uses OLLAMA_HOST for listen address (main.cpp).
-export OLLAMA_HOST=127.0.0.1:11434
+# Internal proxying (nginx -> 127.0.0.1:11434) continues to work.
+# Persistence uses XDG_DATA_HOME.
+# OLLAMA_HOST controls the listen address for hailo-ollama.
+export OLLAMA_HOST=0.0.0.0:11434
 # Allow sharing the Hailo device with other HailoRT applications (e.g. other addons using NPU).
-# See https://github.com/hailo-ai/hailo_model_zoo_genai for details (env var per USAGE.rst).
 export HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED
 export HAILO_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED
-echo "Starting hailo-ollama inference server (internal) on $OLLAMA_HOST ..."
+
+echo "Starting hailo-ollama inference server on $OLLAMA_HOST (native port can be mapped for direct access)"
 # Log to /data/hailo-ollama.log (accessible via Terminal/SSH, Filebrowser addon, or docker exec into the addon container)
 # Use nohup and redirect to avoid pipe affecting the process.
-nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=127.0.0.1:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED HAILO_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED \
+nohup env XDG_DATA_HOME="$XDG_DATA_HOME" OLLAMA_HOST=0.0.0.0:11434 HAILO_OLLAMA_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED HAILO_VDEVICE_GROUP_ID=HAILO_OLLAMA_SHARED \
   hailo-ollama > /data/hailo-ollama.log 2>&1 &
 HAILO_PID=$!
 
@@ -184,15 +188,18 @@ if [ "$READY" -ne 1 ]; then
     echo "Next steps: Check host with 'sudo fuser -v /dev/hailo0', then restart addon"
 fi
 
-echo "Starting web UI (Flask on 5000) + nginx on 8000 proxying to binary (to match official direct binary on 8000 for API + custom UI)"
+echo "Starting web UI (Flask on 5000) + nginx on 8000. Native hailo-ollama available on 11434 (bind 0.0.0.0 for direct testing)"
 # Start Flask UI on internal port 5000
 PORT=5000 python3 /opt/hailo_llm/server.py &
 FLASK_PID=$!
 
 # Nginx config to proxy (full valid config required when using -c):
-# / -> Flask UI (5000)   [our SPA + chat persistence]
-# /api/ and /hailo/ -> binary (11434)  [so 8000 surface matches official hailo-ollama API]
-# This way port 8000 behaves like the official binary on 8000 for the API + serves custom UI.
+# / -> Flask UI (5000)                     [SPA chat + persistence /api/chats]
+# /api/chats, /health, /api/logs etc. -> Flask (5000)
+# /api/ and /hailo/ -> binary (127.0.0.1:11434)  [Ollama-compatible surface on 8000]
+#
+# Separately, the native hailo-ollama is now on 0.0.0.0:11434 so you can map
+# the port in the addon UI and test chat directly (bypass nginx/ingress/UI proxy).
 cat > /tmp/nginx.conf << 'NGINXEOF'
 worker_processes 1;
 events {
