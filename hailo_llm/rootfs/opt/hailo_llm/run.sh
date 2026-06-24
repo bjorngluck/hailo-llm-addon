@@ -104,10 +104,29 @@ fi
 # === Enhanced device & NPU readiness summary ===
 echo ""
 echo "=== NPU / Device Readiness Summary ==="
+echo "Running as: $(id)"
+echo "Capabilities (inside container):"
+cat /proc/self/status 2>/dev/null | grep -i '^Cap' || echo "  (no cap info)"
+echo ""
+echo "Visible Hailo devices:"
+ls -l /dev/hailo* /dev/h1x* 2>/dev/null || echo "  none found"
+echo ""
 if [ -e /dev/hailo0 ]; then
     echo "✓ /dev/hailo0 present inside container"
+    python3 -c '
+import os
+for dev in ["/dev/hailo0", "/dev/h1x-0"]:
+    if os.path.exists(dev):
+        try:
+            with open(dev, "rb") as f: pass
+            print(f"✓ Can open {dev} (read test)")
+        except PermissionError:
+            print(f"✗ Permission denied opening {dev} (check full_access / privileged / protection mode)")
+        except Exception as e:
+            print(f"✗ Error opening {dev}: {e}")
+' 2>/dev/null || true
 else
-    echo "✗ /dev/hailo0 MISSING inside container — check config.yaml devices + privileged mode"
+    echo "✗ /dev/hailo0 MISSING inside container — check config.yaml devices + privileged + full_access"
 fi
 
 echo ""
