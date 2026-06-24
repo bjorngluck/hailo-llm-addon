@@ -1,3 +1,7 @@
+## 2.0.47
+- Diagnostics (device ls, capabilities, hailortcli scan, open tests) are now also appended to /data/hailo-ollama.log so they are visible in /api/logs and the UI Log tab even when you don't have easy `docker exec` access from core-ssh.
+- Bumped to 2.0.47.
+
 ## 2.0.46
 - Added `hailortcli scan` to startup diagnostics (in the "NPU / Device Readiness Summary") so we can see exactly what HailoRT sees for devices from inside the container.
 - Bumped to 2.0.46.

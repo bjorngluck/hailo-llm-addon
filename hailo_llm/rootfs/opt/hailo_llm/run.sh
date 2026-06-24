@@ -114,6 +114,19 @@ echo ""
 echo "HailoRT device scan (hailortcli):"
 hailortcli scan 2>&1 || echo "  hailortcli not available or scan failed (check if hailort deb installed correctly)"
 echo ""
+
+# Also dump key diagnostics to the hailo-ollama.log so they are visible via /api/logs even without docker exec
+{
+  echo ""
+  echo "=== NPU / Device Readiness Summary (also in addon log) ==="
+  echo "Running as: $(id)"
+  echo "Capabilities (inside container):"
+  cat /proc/self/status 2>/dev/null | grep -i '^Cap' || echo "  (no cap info)"
+  echo "Visible Hailo devices:"
+  ls -l /dev/hailo* /dev/h1x* 2>/dev/null || echo "  none found"
+  echo "HailoRT device scan (hailortcli):"
+  hailortcli scan 2>&1 || echo "  hailortcli not available or scan failed"
+} >> /data/hailo-ollama.log 2>/dev/null || true
 if [ -e /dev/hailo0 ]; then
     echo "✓ /dev/hailo0 present inside container"
     python3 -c '
